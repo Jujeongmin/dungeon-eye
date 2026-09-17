@@ -21,9 +21,10 @@ function apply(next: Grip): void {
   Object.assign(GRIP.stock, next.stock);
   Object.assign(GRIP.rightHand, next.rightHand);
   Object.assign(GRIP.leftHand, next.leftHand);
+  Object.assign(GRIP.rightShift, next.rightShift);
+  Object.assign(GRIP.leftShift, next.leftShift);
   GRIP.trigger = next.trigger;
   GRIP.barrel = next.barrel;
-  GRIP.drop = next.drop;
   GRIP.neckKeep = next.neckKeep;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(GRIP));
@@ -35,7 +36,18 @@ function apply(next: Grip): void {
 function loadSaved(): void {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) apply({ ...(JSON.parse(DEFAULTS) as Grip), ...(JSON.parse(saved) as Grip) });
+    if (!saved) return;
+    const base = JSON.parse(DEFAULTS) as Grip;
+    const stored = JSON.parse(saved) as Partial<Grip>;
+    apply({
+      ...base,
+      ...stored,
+      stock: { ...base.stock, ...stored.stock },
+      rightShift: { ...base.rightShift, ...stored.rightShift },
+      leftShift: { ...base.leftShift, ...stored.leftShift },
+      rightHand: { ...base.rightHand, ...stored.rightHand },
+      leftHand: { ...base.leftHand, ...stored.leftHand },
+    });
   } catch {
     // A broken saved value just means the defaults stay.
   }
@@ -128,10 +140,14 @@ export function GripTuner() {
         <Slider label="앞뒤" value={grip.stock.z} min={-0.4} max={0.4} step={0.01} onChange={(z) => set({ stock: { ...grip.stock, z } })} />
       </fieldset>
       <fieldset>
-        <legend>손이 잡는 곳</legend>
-        <Slider label="오른손(0=개머리)" value={grip.trigger} min={0} max={1} step={0.01} onChange={(trigger) => set({ trigger })} />
-        <Slider label="왼손(1=총구)" value={grip.barrel} min={0} max={1} step={0.01} onChange={(barrel) => set({ barrel })} />
-        <Slider label="아래로" value={grip.drop} min={-0.2} max={0.2} step={0.01} onChange={(drop) => set({ drop })} />
+        <legend>손이 잡는 곳 (m)</legend>
+        <Slider label="오른손 앞뒤" value={grip.trigger} min={0} max={1} step={0.01} onChange={(trigger) => set({ trigger })} />
+        <Slider label="오른손 좌우" value={grip.rightShift.side} min={-0.3} max={0.3} step={0.01} onChange={(side) => set({ rightShift: { ...grip.rightShift, side } })} />
+        <Slider label="오른손 높이" value={grip.rightShift.up} min={-0.3} max={0.3} step={0.01} onChange={(up) => set({ rightShift: { ...grip.rightShift, up } })} />
+        <Slider label="왼손 앞뒤" value={grip.barrel} min={0} max={1} step={0.01} onChange={(barrel) => set({ barrel })} />
+        <Slider label="왼손 좌우" value={grip.leftShift.side} min={-0.3} max={0.3} step={0.01} onChange={(side) => set({ leftShift: { ...grip.leftShift, side } })} />
+        <Slider label="왼손 높이" value={grip.leftShift.up} min={-0.3} max={0.3} step={0.01} onChange={(up) => set({ leftShift: { ...grip.leftShift, up } })} />
+        <p className="tuner-note">앞뒤: 0 = 개머리 끝, 1 = 총구 끝. 좌우: + 는 캐릭터의 왼쪽.</p>
       </fieldset>
       {handControls("rightHand", "오른손")}
       {handControls("leftHand", "왼손")}

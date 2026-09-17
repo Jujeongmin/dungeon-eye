@@ -16,10 +16,12 @@ export interface HandTurn { on: boolean; x: number; y: number; z: number }
 export const GRIP = {
   // Where the stock sits relative to the chest bone, in body space (the model faces +z, its right is -x).
   stock: { x: -0.13, y: 0.08, z: 0.06 },
-  // Where the hands hold it, as fractions of its length from the stock, and a drop below its centre line.
+  // Where the hands hold it, as fractions of its length from the stock.
   trigger: 0.34,
   barrel: 0.64,
-  drop: -0.04,
+  // Each hand's shift from the rifle's centre line, in metres: side (+ = body's left) and up.
+  rightShift: { side: 0, up: -0.04 },
+  leftShift: { side: 0, up: -0.04 },
   // How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
   neckKeep: 0.2,
   // Optional hand rotation in the rifle's space, in degrees; off keeps the animation's hand rotation.
@@ -184,17 +186,17 @@ export class RemotePlayerActor {
     weapon.position.z -= box.min.z;
     weapon.updateMatrixWorld(true);
 
-    const hold = (arm: Arm, along: number, hand: HandTurn) => {
+    const hold = (arm: Arm, along: number, shift: { side: number; up: number }, hand: HandTurn) => {
       // The rifle is not rotated in body space, so its box offsets add straight onto its position.
-      this.at.set(centreX, centreY + GRIP.drop, box.min.z + length * along).add(weapon.position);
+      this.at.set(centreX + shift.side, centreY + shift.up, box.min.z + length * along).add(weapon.position);
       reachWithArm(arm.upper, arm.lower, arm.hand, this.object.localToWorld(this.at));
       if (!hand.on) return;
       weapon.getWorldQuaternion(this.turn);
       this.turn.multiply(this.handTurn.setFromEuler(this.euler.set(hand.x * DEG, hand.y * DEG, hand.z * DEG)));
       setWorldRotation(arm.hand, this.turn);
     };
-    hold(rig.right, GRIP.trigger, GRIP.rightHand);
-    hold(rig.left, GRIP.barrel, GRIP.leftHand);
+    hold(rig.right, GRIP.trigger, GRIP.rightShift, GRIP.rightHand);
+    hold(rig.left, GRIP.barrel, GRIP.leftShift, GRIP.leftHand);
   }
 
   sync(pose: Pose | null, status: PlayerStatus, dt: number): void {

@@ -7,6 +7,7 @@ import { MatchClient } from "./net/matchClient";
 import { PracticeSession } from "./net/practice";
 import { Verse8Transport } from "./net/verse8Transport";
 import { MatchScreen } from "./ui/MatchScreen";
+import { ModelGallery, galleryEnabled } from "./ui/ModelGallery";
 import { TitleScreen } from "./ui/TitleScreen";
 
 type Mode = "title" | "practice" | "online";
@@ -17,6 +18,7 @@ const ONLINE_AVAILABLE = Boolean(import.meta.env.VITE_AGENT8_VERSE);
 export default function App() {
   const [mode, setMode] = useState<Mode>("title");
   const toTitle = useCallback(() => setMode("title"), []);
+  if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
   if (mode === "online") return <OnlineMatch onExit={toTitle} />;
   return (
