@@ -1,0 +1,5 @@
+html, body, #root { margin: 0; height: 100%; background: #0b0a09; color: #e8e2d6; font-family: system-ui, sans-serif; }
+.app { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.app canvas { display: block; width: 100%; height: 100%; }
+.hud { position: absolute; left: 16px; top: 12px; pointer-events: none; letter-spacing: 0.1em; }
+.crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #e8e2d6; border-radius: 50%; pointer-events: none; }
