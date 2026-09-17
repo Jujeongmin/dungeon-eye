@@ -9,7 +9,8 @@
 
 ## 현재 상태
 
-Plan 1 완료: 혼자 던전 방을 1인칭으로 걸어다니며 AKM으로 좀비를 쏠 수 있다. 배신자 규칙과 멀티플레이는 Plan 2~4.
+Plan 1 완료: 혼자 던전 방을 1인칭으로 걸어다니며 AKM으로 좀비를 쏠 수 있다.
+Plan 2 완료: 서버가 4인 매치 규칙(방 찾기, 배신자 배정, 빙의, 연결 대미지, 사격, 탈출, 승패)과 판 결과 기록을 처리한다. 화면 연결은 Plan 3.
 
 ## 3D 모델은 이 저장소에 없다
 
@@ -29,4 +30,11 @@ npm run dev
 
 ```bash
 npm test
+```
+
+서버(Verse8 GameServer, `server/`):
+
+```bash
+npm run server:install
+npm run server:test
 ```
