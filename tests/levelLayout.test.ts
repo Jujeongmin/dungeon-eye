@@ -45,6 +45,13 @@ describe("parseLevel", () => {
     expect(() => parseLevel(["##", "#"], 2)).toThrow(/row 1/);
     expect(() => parseLevel(["#?#"], 2)).toThrow(/unknown symbol "\?"/);
   });
+
+  it("records exits as walkable floor cells", () => {
+    const withExit = parseLevel(["####", "#PE#", "####"], 2);
+    expect(withExit.exits).toEqual([{ x: 5, z: 3 }]);
+    expect(withExit.solid[1][2]).toBe(false);
+    expect(withExit.placements).toContainEqual({ model: "dd_floor_a", x: 5, y: 0, z: 3, rotationY: 0 });
+  });
 });
 
 describe("solidAt", () => {
@@ -62,5 +69,11 @@ describe("LEVEL_1", () => {
     const level = parseLevel(LEVEL_1, 4);
     expect(level.zombieSpawns.length).toBeGreaterThan(0);
     expect(solidAt(level, level.playerSpawn.x, level.playerSpawn.z)).toBe(false);
+  });
+
+  it("has exactly one exit, on a walkable cell", () => {
+    const level = parseLevel(LEVEL_1, 4);
+    expect(level.exits).toEqual([{ x: 38, z: 26 }]);
+    expect(solidAt(level, 38, 26)).toBe(false);
   });
 });

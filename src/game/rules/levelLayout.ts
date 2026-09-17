@@ -8,6 +8,7 @@ export interface LevelLayout {
   placements: Placement[];
   playerSpawn: Point2;
   zombieSpawns: Point2[];
+  exits: Point2[];
 }
 
 export const TILE_SIZE = 4;
@@ -20,12 +21,12 @@ export const LEVEL_1: string[] = [
   "#.....#.Z.#",
   "##.####...#",
   "#.....#.C.#",
-  "#..Z......#",
+  "#..Z.....E#",
   "###########",
 ];
 
 const PROP: Record<string, string> = { B: "dd_barrel", C: "chest_closed" };
-const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C"]);
+const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C", "E"]);
 const SOLID_SYMBOLS = new Set(["#", "T"]);
 
 // Neighbour offset -> rotation that turns a panel's +z toward the floor cell.
@@ -51,6 +52,7 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
 
   const placements: Placement[] = [];
   const zombieSpawns: Point2[] = [];
+  const exits: Point2[] = [];
   // Asserted so TS keeps the wide type; it is assigned inside the callbacks below.
   let playerSpawn = null as Point2 | null;
 
@@ -79,11 +81,12 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
       if (PROP[ch]) placements.push({ model: PROP[ch], x, y: 0, z, rotationY: 0 });
       if (ch === "P") playerSpawn = { x, z };
       if (ch === "Z") zombieSpawns.push({ x, z });
+      if (ch === "E") exits.push({ x, z });
     });
   });
 
   if (!playerSpawn) throw new Error("level has no player spawn (P)");
-  return { tileSize, cols, rows: rows.length, solid, placements, playerSpawn, zombieSpawns };
+  return { tileSize, cols, rows: rows.length, solid, placements, playerSpawn, zombieSpawns, exits };
 }
 
 export function solidAt(layout: LevelLayout, x: number, z: number): boolean {
