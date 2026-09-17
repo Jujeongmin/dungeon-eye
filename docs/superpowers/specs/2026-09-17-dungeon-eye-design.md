@@ -105,10 +105,14 @@
 
 | 용도 | 후보 | 링크 |
 |---|---|---|
+| 던전 환경 — 1순위 | Decrepit Dungeon LITE (Prodigious Creations, 188개 평점) — 이름·평점 다 부합 | https://assetstore.unity.com/packages/3d/environments/dungeons/decrepit-dungeon-lite-33936 |
 | 던전 환경 | Free Low Poly Dungeon Pack | https://assetstore.unity.com/packages/3d/environments/dungeons/free-low-poly-dungeon-pack-398788 |
 | 던전 환경 | Stylized Dungeon - Free Pack | https://assetstore.unity.com/packages/3d/environments/dungeons/stylized-dungeon-free-pack-178268 |
 | 던전 환경 | Free Simple Dungeon Props | https://assetstore.unity.com/packages/3d/environments/dungeons/free-simple-dungeon-props-225521 |
-| 던전 환경(큐레이션) | Free Dungeon Assets 목록 | https://assetstore.unity.com/lists/free-dungeon-assets-81248 |
+| 던전 환경 — 조명 소품 | Modular Medieval Lanterns (63개 평점) — 어두운 톤 조성에 중요 | https://assetstore.unity.com/packages/3d/environments/historic/modular-medieval-lanterns-85527 |
+| 던전 환경 — 분위기 보조 | Stylized Cemetery Pack (20개 평점) | https://assetstore.unity.com/packages/3d/environments/stylized-cemetery-pack-56402 |
+| 던전 환경 — 루팅 소품 | Treasure Chest - PBR (36개 평점) | https://assetstore.unity.com/packages/3d/props/interior/treasure-chest-pbr-72498 |
+| 던전 환경(큐레이션, 추가 탐색용) | Free Dungeon Assets 목록 | https://assetstore.unity.com/lists/free-dungeon-assets-81248 |
 | 몬스터 — 조종 가능 후보 1 | Zombie (PXLTIGER, 782개 평점) | https://assetstore.unity.com/packages/3d/characters/humanoids/zombie-30232 |
 | 몬스터 — 조종 가능 후보 2 | Free Fantasy Spider (Kalamona, 240개 평점) | https://assetstore.unity.com/packages/3d/characters/creatures/free-fantasy-spider-10104 |
 | 몬스터 — 보스/탱커 | GolemMonster (Siuniaev, 32개 평점) | https://assetstore.unity.com/packages/3d/characters/creatures/golemmonster-33260 |
