@@ -1,0 +1,74 @@
+{
+  "models": {
+    "chest_closed": {
+      "url": "assets/models/chest_closed.glb",
+      "bytes": 477632,
+      "animations": []
+    },
+    "contract_killer": {
+      "url": "assets/models/contract_killer.glb",
+      "bytes": 244980,
+      "animations": [
+        "Idle_Rifle",
+        "Run_Rifle",
+        "Walk_Rifle",
+        "Death_Rifle"
+      ]
+    },
+    "dd_barrel": {
+      "url": "assets/models/dd_barrel.glb",
+      "bytes": 1222960,
+      "animations": []
+    },
+    "dd_ceiling": {
+      "url": "assets/models/dd_ceiling.glb",
+      "bytes": 347232,
+      "animations": []
+    },
+    "dd_crate_a": {
+      "url": "assets/models/dd_crate_a.glb",
+      "bytes": 798044,
+      "animations": []
+    },
+    "dd_floor_a": {
+      "url": "assets/models/dd_floor_a.glb",
+      "bytes": 347276,
+      "animations": []
+    },
+    "dd_pillar_a": {
+      "url": "assets/models/dd_pillar_a.glb",
+      "bytes": 313576,
+      "animations": []
+    },
+    "dd_torch": {
+      "url": "assets/models/dd_torch.glb",
+      "bytes": 364440,
+      "animations": []
+    },
+    "dd_wall_a": {
+      "url": "assets/models/dd_wall_a.glb",
+      "bytes": 347248,
+      "animations": []
+    },
+    "dd_wall_a_corner": {
+      "url": "assets/models/dd_wall_a_corner.glb",
+      "bytes": 348948,
+      "animations": []
+    },
+    "wpn_akm": {
+      "url": "assets/models/wpn_akm.glb",
+      "bytes": 799900,
+      "animations": []
+    },
+    "zombie1": {
+      "url": "assets/models/zombie1.glb",
+      "bytes": 781976,
+      "animations": [
+        "Z_Idle",
+        "Z_Walk_InPlace",
+        "Z_Attack",
+        "Z_FallingBack"
+      ]
+    }
+  }
+}
