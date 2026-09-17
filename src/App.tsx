@@ -4,11 +4,11 @@ import type { Pose } from "./game/match/types";
 import { RUINS, TILE_SIZE, parseLevel } from "./game/rules/levelLayout";
 import { HostDirector } from "./net/hostDirector";
 import { MatchClient } from "./net/matchClient";
-import { PracticeSession } from "./net/practice";
+import { PRACTICE_ACCOUNT, PracticeSession } from "./net/practice";
 import { Verse8Transport } from "./net/verse8Transport";
 import { MatchScreen } from "./ui/MatchScreen";
 import { ModelGallery, galleryEnabled } from "./ui/ModelGallery";
-import { TitleScreen } from "./ui/TitleScreen";
+import { MainMenu } from "./ui/MainMenu";
 
 type Mode = "title" | "practice" | "online";
 
@@ -17,12 +17,14 @@ const ONLINE_AVAILABLE = Boolean(import.meta.env.VITE_AGENT8_VERSE);
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("title");
+  const { server, connected } = useGameServer();
   const toTitle = useCallback(() => setMode("title"), []);
   if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
   if (mode === "online") return <OnlineMatch onExit={toTitle} />;
   return (
-    <TitleScreen
+    <MainMenu
+      account={connected ? server.account : PRACTICE_ACCOUNT}
       onPractice={() => setMode("practice")}
       onOnline={() => setMode("online")}
       onlineAvailable={ONLINE_AVAILABLE}

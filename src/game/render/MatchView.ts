@@ -11,43 +11,30 @@ import type { MatchResult, MonsterKind, PlayerResult, Pose, Possession, PublicMa
 import { distance } from "../match/view";
 import { tallyPlates, votesNeeded } from "../match/vote";
 import { ZOMBIE_HEIGHT, ZOMBIE_RADIUS, resolveShot, type HitTarget, type Ray3 } from "../rules/combat";
-import { DRESSING_MODELS, dressLevel, type Dressed } from "../rules/dressing";
-import { RUINS, TILE_SIZE, parseLevel, solidAt, solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
+import { RUINS, TILE_SIZE, parseLevel, solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
 import { EYE_HEIGHT, applyLook, stepPlayer, type SolidTest } from "../rules/movement";
 import { FpsInput } from "./FpsInput";
 import { LightPool } from "./lightPool";
 import { MonsterActor, type MonsterLook } from "./MonsterActor";
 import { OBJECTIVE_MODELS, ObjectiveProps } from "./ObjectiveProps";
 import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
-import { bakedTint, buildStaticBatch, type BakeLight, type StaticPiece } from "./staticBatch";
+import { LEVEL_MODELS, buildLevelScene } from "./levelScene";
 import { Viewmodel } from "./Viewmodel";
 import { costumeForSeat } from "./costumes";
 import { displayName, ownName } from "./names";
 import { playScream, playThud } from "./scream";
+import { settings } from "../../ui/settings";
 
 export const LOOK_SENSITIVITY = 0.0022;
 
-// Corrections for the Decrepit Dungeon kit's own pivots and facing, tuned by eye in Plan 1.
-// Wall_A is authored running along z, so it needs a quarter turn to span its edge.
-export const KIT = { wallYawOffset: Math.PI / 2, wallInset: 0, ceilingYOffset: 0 };
-
-const KIT_MODELS = ["dd_floor_a", "dd_ceiling", "dd_wall_a", "dd_pillar_a", "dd_torch", "dd_barrel", "chest_closed"];
-export const MATCH_MODELS = [
-  ...new Set([...KIT_MODELS, ...DRESSING_MODELS, ...OBJECTIVE_MODELS, "wpn_akm", "zombie1", "explorer"]),
-];
+export const MATCH_MODELS = [...new Set([...LEVEL_MODELS, ...OBJECTIVE_MODELS, "wpn_akm", "zombie1", "explorer"])];
 
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED_FACTOR = 1.3;
 const HUD_INTERVAL_MS = 100;
 const SHAKE_MS = 350;
-const HANG_CLEARANCE = 2.3;
 // Real-time point lights shared by all lamps; everything farther only has baked light.
-const LIGHT_SLOTS = 6;
-const TORCH_COLOR = new THREE.Color(0xff8a3d);
-// Baked torch light is a softer, paler warmth than the flame itself, so near walls do not burn orange.
-const TORCH_BAKE = { color: new THREE.Color(1, 0.82, 0.62), strength: 0.7, range: 11 };
-const BAKE_AMBIENT = 0.5;
-const BAKE_MAX = 1.25;
+export const LIGHT_SLOTS = 6;
 const SHAKE_SIZE = 0.06;
 // The boss is the zombie model, grown and reddened, until it gets its own model.
 const BOSS_LOOK: MonsterLook = { height: 3, tint: 0xd07a7a };
@@ -143,7 +130,6 @@ export class MatchView {
   private readonly layout: LevelLayout = parseLevel(RUINS, TILE_SIZE);
   private readonly input: FpsInput;
   private readonly resizeObserver: ResizeObserver;
-  private dressing: Dressed[] = [];
   private readonly lights = new LightPool(this.scene, LIGHT_SLOTS);
   private readonly monsters = new Map<string, MonsterActor>();
   private readonly players = new Map<string, RemotePlayerActor>();
@@ -194,10 +180,8 @@ export class MatchView {
     // React StrictMode mounts twice; the first view may be gone by now.
     if (this.disposed) return;
     this.library = library;
-    this.dressing = dressLevel(this.layout);
-    this.addLights();
-    const kitScale = this.buildLevel(library);
-    this.addExitMarker(library, kitScale);
+    const { kitScale } = buildLevelScene(this.scene, library, this.layout, this.lights, () => this.clock.elapsedTime);
+    this.addCameraLamp();
     this.props = new ObjectiveProps(this.scene, this.layout, library, kitScale, this.lights);
     this.props.onLand = () => {
       this.shakeUntil = performance.now() + SHAKE_MS;
@@ -279,7 +263,8 @@ export class MatchView {
     if (match) this.refreshSolid(match);
 
     const look = this.input.consumeLook();
-    const view = applyLook(this.yaw, this.pitch, look.dx, look.dy, LOOK_SENSITIVITY);
+    const view = applyLook(this.yaw, this.pitch, look.dx, look.dy, LOOK_SENSITIVITY * settings().sensitivity);
+    this.renderer.toneMappingExposure = settings().brightness;
     this.yaw = view.yaw;
     this.pitch = view.pitch;
 
@@ -576,94 +561,11 @@ export class MatchView {
     };
   }
 
-  // Builds the kit level as instanced batches with baked torch light, and returns the kit's scale.
-  private buildLevel(library: ModelLibrary): number {
-    const floorSize = new THREE.Box3().setFromObject(library.get("dd_floor_a").scene).getSize(new THREE.Vector3());
-    const kitScale = TILE_SIZE / Math.max(floorSize.x, floorSize.z);
-    const bake: BakeLight[] = this.torchSpots().map((at) => ({ ...at, ...TORCH_BAKE }));
-    const blocked = (x: number, z: number) => solidAt(this.layout, x, z);
-    const heights = new Map<string, { min: number; max: number }>();
-    const heightOf = (model: string) => {
-      let h = heights.get(model);
-      if (!h) {
-        const box = new THREE.Box3().setFromObject(library.get(model).scene);
-        h = { min: box.min.y * kitScale, max: box.max.y * kitScale };
-        heights.set(model, h);
-      }
-      return h;
-    };
-    const sample = new THREE.Vector3();
-    const pieces: StaticPiece[] = this.dressing.map((p) => {
-      let { x, y, z } = p;
-      let yaw = p.rotationY;
-      // Where the piece's light is judged: a little in front of wall faces, mid-height otherwise.
-      sample.set(x, 1.5, z);
-      if (p.model.startsWith("dd_wall_")) {
-        sample.set(x + Math.sin(yaw) * 0.4, 2, z + Math.cos(yaw) * 0.4);
-        x += Math.sin(p.rotationY) * KIT.wallInset;
-        z += Math.cos(p.rotationY) * KIT.wallInset;
-        yaw += KIT.wallYawOffset;
-      }
-      if (p.model.startsWith("dd_floor_")) sample.y = 0.3;
-      if (p.model === "dd_ceiling") {
-        y += KIT.ceilingYOffset;
-        sample.y = TILE_SIZE - 0.3;
-      }
-      if (p.hang) {
-        // Top against the ceiling, but never lower than head height so players pass beneath.
-        const h = heightOf(p.model);
-        y += Math.max(TILE_SIZE - (y + h.max), HANG_CLEARANCE - (y + h.min));
-      }
-      const matrix = new THREE.Matrix4().compose(
-        new THREE.Vector3(x, y, z),
-        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw),
-        new THREE.Vector3(kitScale, kitScale, kitScale),
-      );
-      const tint = p.model === "dd_torch" ? new THREE.Color(1, 1, 1) : bakedTint(sample, bake, BAKE_AMBIENT, blocked);
-      tint.setRGB(Math.min(tint.r, BAKE_MAX), Math.min(tint.g, BAKE_MAX), Math.min(tint.b, BAKE_MAX));
-      return { model: p.model, matrix, tint };
-    });
-    this.scene.add(buildStaticBatch(library, pieces).group);
-    return kitScale;
-  }
-
-  // Flame positions: pillar torches and wall torches, nudged off the wall into the room.
-  private torchSpots(): { x: number; y: number; z: number }[] {
-    return this.dressing
-      .filter((p) => p.model === "dd_torch")
-      .map((p) => ({ x: p.x + Math.sin(p.rotationY) * 0.3, y: p.y + 0.4, z: p.z + Math.cos(p.rotationY) * 0.3 }));
-  }
-
-  private addLights(): void {
-    this.scene.add(new THREE.HemisphereLight(0x8a8298, 0x2a2018, 0.9));
-    this.torchSpots().forEach((at, i) => {
-      this.lights.add({
-        position: new THREE.Vector3(at.x, at.y, at.z),
-        color: TORCH_COLOR,
-        range: 12,
-        intensity: () => {
-          const t = this.clock.elapsedTime;
-          return 25 + Math.sin(t * 9 + i * 1.7) * 3 + Math.sin(t * 23 + i) * 2;
-        },
-      });
-    });
+  private addCameraLamp(): void {
     const lamp = new THREE.SpotLight(0xfff1dc, 90, 24, 0.8, 0.7, 2);
     lamp.position.set(0, 0, 0);
     lamp.target.position.set(0, 0, -1);
     this.camera.add(lamp, lamp.target);
-  }
-
-  // The way out is a floor hatch with a pale green glow.
-  private addExitMarker(library: ModelLibrary, kitScale: number): void {
-    for (const exit of this.layout.exits) {
-      const hatch = library.instance("dd_floor_gate");
-      hatch.scale.setScalar(kitScale * 0.8);
-      hatch.updateMatrixWorld(true);
-      const centre = new THREE.Box3().setFromObject(hatch).getCenter(new THREE.Vector3());
-      hatch.position.set(exit.x - centre.x, 0.02, exit.z - centre.z);
-      this.scene.add(hatch);
-      this.lights.add({ position: new THREE.Vector3(exit.x, 1.2, exit.z), color: new THREE.Color(0x4dff9a), range: 8, intensity: () => 12 });
-    }
   }
 
   private resize(): void {

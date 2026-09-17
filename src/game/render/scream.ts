@@ -1,3 +1,5 @@
+import { settings } from "../../ui/settings";
+
 let audio: AudioContext | null = null;
 
 // A short filtered noise burst. Placeholder until real sound effects arrive.
@@ -19,7 +21,7 @@ export function playScream(): void {
   filter.frequency.exponentialRampToValueAtTime(2400, t + 0.15);
   filter.frequency.exponentialRampToValueAtTime(500, t + duration);
   const gain = ctx.createGain();
-  gain.gain.value = 0.5;
+  gain.gain.value = 0.5 * settings().volume;
   source.connect(filter).connect(gain).connect(ctx.destination);
   source.start();
 }
@@ -35,7 +37,7 @@ export function playThud(): void {
   osc.frequency.setValueAtTime(90, t);
   osc.frequency.exponentialRampToValueAtTime(35, t + 0.35);
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.9, t);
+  gain.gain.setValueAtTime(Math.max(0.001, 0.9 * settings().volume), t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
   osc.connect(gain).connect(ctx.destination);
   osc.start(t);
