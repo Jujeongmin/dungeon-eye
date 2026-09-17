@@ -109,8 +109,14 @@
 | 던전 환경 | Stylized Dungeon - Free Pack | https://assetstore.unity.com/packages/3d/environments/dungeons/stylized-dungeon-free-pack-178268 |
 | 던전 환경 | Free Simple Dungeon Props | https://assetstore.unity.com/packages/3d/environments/dungeons/free-simple-dungeon-props-225521 |
 | 던전 환경(큐레이션) | Free Dungeon Assets 목록 | https://assetstore.unity.com/lists/free-dungeon-assets-81248 |
-| 몬스터(큐레이션) | Free Fantasy Creatures 목록 | https://assetstore.unity.com/lists/free-fantasy-creatures-11348 |
-| 몬스터(큐레이션) | Free Monsters 목록 | https://assetstore.unity.com/lists/free-monsters-14593 |
+| 몬스터 — 조종 가능 후보 1 | Zombie (PXLTIGER, 782개 평점) | https://assetstore.unity.com/packages/3d/characters/humanoids/zombie-30232 |
+| 몬스터 — 조종 가능 후보 2 | Free Fantasy Spider (Kalamona, 240개 평점) | https://assetstore.unity.com/packages/3d/characters/creatures/free-fantasy-spider-10104 |
+| 몬스터 — 보스/탱커 | GolemMonster (Siuniaev, 32개 평점) | https://assetstore.unity.com/packages/3d/characters/creatures/golemmonster-33260 |
+| 몬스터 — 리얼 PBR 야수 | PBR Velociraptors (17개 평점) | https://assetstore.unity.com/packages/3d/characters/animals/pbr-velociraptors-165201 |
+| 몬스터 — 보스 후보 | Dragon for Boss Monster : HP (Dungeon Mason) | https://assetstore.unity.com/packages/3d/characters/creatures/dragon-for-boss-monster-hp-79398 |
+| 몬스터 — 확인 필요(리깅 여부 불명) | Feline Gargoyle (카테고리가 props라 정적 모델일 가능성) | https://assetstore.unity.com/packages/3d/props/feline-gargoyle-27106 |
+| 몬스터(큐레이션, 추가 탐색용) | Free Fantasy Creatures 목록 | https://assetstore.unity.com/lists/free-fantasy-creatures-11348 |
+| 몬스터(큐레이션, 추가 탐색용) | Free Monsters 목록 | https://assetstore.unity.com/lists/free-monsters-14593 |
 | FPS 무기 | FA: FPS Weapons Pack - Free | https://assetstore.unity.com/packages/3d/props/guns/fa-fps-weapons-pack-free-254020 |
 | FPS 무기 | Free FPS Weapon - MP7 | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-mp7-177246 |
 | FPS 무기 | Free FPS Weapon - AKM | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-akm-180663 |
