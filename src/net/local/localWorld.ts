@@ -19,6 +19,9 @@ function copy<T>(value: T): T {
 
 const GLOBAL_NAMES = ["$global", "$room", "$sender", "$lock"] as const;
 
+// The Verse8 globals are process-wide, so every world must take turns, not just calls within one world.
+let sharedQueue: Promise<unknown> = Promise.resolve();
+
 export class LocalWorld {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly userStates = new Map<string, Json>();
@@ -27,7 +30,6 @@ export class LocalWorld {
   private readonly dirtyRooms = new Set<string>();
   private readonly dirtyUsers = new Set<string>();
   private pendingMessages: WorldEvent[] = [];
-  private queue: Promise<unknown> = Promise.resolve();
   private seq = 0;
 
   constructor(private readonly server: object) {}
@@ -61,8 +63,8 @@ export class LocalWorld {
 
   async idle(): Promise<void> {
     let seen: Promise<unknown> | null = null;
-    while (seen !== this.queue) {
-      seen = this.queue;
+    while (seen !== sharedQueue) {
+      seen = sharedQueue;
       await seen;
     }
   }
@@ -73,8 +75,8 @@ export class LocalWorld {
   }
 
   private enqueue(work: () => Promise<unknown>): Promise<unknown> {
-    const result = this.queue.then(work, work);
-    this.queue = result.catch(() => undefined);
+    const result = sharedQueue.then(work, work);
+    sharedQueue = result.catch(() => undefined);
     return result;
   }
 

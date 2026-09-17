@@ -79,6 +79,21 @@ describe("LocalWorld", () => {
     expect((globalThis as Record<string, unknown>).$sender).toBeUndefined();
   });
 
+  it("keeps two worlds apart even when their calls overlap", async () => {
+    const first = new LocalWorld(new Server());
+    const second = new LocalWorld(new Server());
+    const calls: Promise<unknown>[] = [];
+    for (const p of PLAYERS) {
+      calls.push(first.call(p, null, "findMatch"));
+      calls.push(second.call(`${p}-2`, null, "findMatch"));
+    }
+    const ids = (await Promise.all(calls)).map((r) => (r as { roomId: string }).roomId);
+    const firstRoom = first.roomState(ids[0]);
+    const secondRoom = second.roomState(ids[1]);
+    expect(firstRoom.match.players).toEqual(PLAYERS);
+    expect(secondRoom.match.players).toEqual(PLAYERS.map((p) => `${p}-2`));
+  });
+
   it("copies values so callers cannot change stored state", async () => {
     const world = new LocalWorld(new Server());
     const roomId = await fill(world);
