@@ -130,15 +130,15 @@
 | FPS 무기(큐레이션, 추가 탐색용) | Best Free Weapons 목록 | https://assetstore.unity.com/lists/best-free-weapons-42298 |
 | 사람 캐릭터 — 1순위 | Adventurer Blake (ManNeko) — 던전 모험가 테마 그대로, 권총+PBR+Humanoid 애니메이션 세트 동봉, 즐겨찾기 748 | https://assetstore.unity.com/packages/3d/characters/humanoids/adventurer-blake-158728 |
 | 사람 캐릭터 — 2순위 | Bodyguards (Batewar, 173개 평점) — 리얼 계열, 캐릭터 3+보너스 1 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/bodyguards-31711 |
-| 사람 캐릭터 — 3순위 | Contract Killer (Jellymobile, 4.9점) — 리얼 계열 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/contract-killer-29235 |
+| 사람 캐릭터 — 3순위 | Contract Killer (실제 다운로드본 퍼블리셔는 Yurowm) — 캐릭터+권총/저격총 모델+**FPS 사격 애니메이션 풀세트**(Idle/Walk/Run/Crouch/Jump/Sneak + 권총1정·2정·저격총별 Fire 모션, Animator Controller 4개 포함) 동봉. 무기 애니메이션 기반 자산으로 최우선 활용 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/contract-killer-29235 |
 | 사람 캐릭터 — 다양성용 | 3 Free Characters (HONETi, 149개 평점, 즐겨찾기 1363) | https://assetstore.unity.com/packages/3d/characters/humanoids/fantasy/3-free-characters-18098 |
 | 사람 캐릭터 — 테마 보조 | Free Scavenger (Paul N.) — 던전 생존자 컨셉과 잘 맞음 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/free-scavenger-261065 |
 | 사람 캐릭터(필터 적용된 검색, 추가 탐색용) | 에셋스토어 무료 캐릭터 전체 | https://assetstore.unity.com/?category=3d%2Fcharacters&free=true&orderBy=1 |
 
 **주의**:
 - "FPS AKM - Model & Textures"는 이름상 모델+텍스처만 포함하고 리깅/사격 애니메이션은
-  없을 가능성이 있음 — 받으면 먼저 확인하고, 없으면 FA: FPS Weapons Pack의 손+애니메이션과
-  조합하거나 Mixamo 손 애니메이션을 입혀야 함.
+  없을 가능성이 있음 — 다행히 Contract Killer(Yurowm) 팩에 사격/이동 애니메이션 풀세트가
+  이미 있으므로 그걸 리타겟해서 쓰면 이 문제 해결됨. Mixamo는 그래도 안 될 때의 대안으로만.
 - 사람 캐릭터 중 진짜 "리얼한" 편은 Bodyguards·Contract Killer·Adventurer Blake 정도고
   나머지는 스타일라이즈드에 가까움. 더 사실적인 게 필요하면 **Adobe Mixamo**(무료, 계정만
   필요, https://www.mixamo.com )가 대안 — 리깅된 인간형 + 방대한 애니메이션을 FBX로 제공,
