@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Pose } from "../match/types";
-import { reachWithArm, setWorldRotation } from "./armIk";
+import { reachWithArm } from "./armIk";
 import { isCostumePart, type Costume } from "./costumes";
 import { createLabel, setLabel } from "./labels";
 import { withUpperBodyPose } from "./playerAnimation";
@@ -11,10 +11,8 @@ const FOLLOW_RATE = 12;
 const FALL_RATE = 6;
 const RIFLE_LENGTH = 0.75;
 
-export interface HandTurn { on: boolean; x: number; y: number; z: number }
-
-// How the rifle is held. Mutable so the development tuner can adjust it live.
-export const GRIP = {
+// How the rifle is held, fitted by eye (2026-09-17).
+const GRIP = {
   // Where the stock sits relative to the chest bone, in body space (the model faces +z, its right is -x).
   stock: { x: -0.12, y: 0.07, z: 0.05 },
   // Where the hands hold it, as fractions of its length from the stock.
@@ -25,12 +23,7 @@ export const GRIP = {
   leftShift: { side: 0.06, up: -0.03 },
   // How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
   neckKeep: 0.1,
-  // Optional hand rotation in the rifle's space, in degrees; off keeps the animation's hand rotation.
-  rightHand: { on: false, x: -30, y: 0, z: -5 } as HandTurn,
-  leftHand: { on: false, x: 0, y: 0, z: 0 } as HandTurn,
-};
-
-const DEG = Math.PI / 180;
+} as const;
 
 export type PlayerStatus = "active" | "dead" | "escaped";
 
@@ -103,9 +96,6 @@ export class RemotePlayerActor {
   private readonly rig: Rig | null;
   private readonly rifleBox = new THREE.Box3();
   private readonly at = new THREE.Vector3();
-  private readonly turn = new THREE.Quaternion();
-  private readonly euler = new THREE.Euler();
-  private readonly handTurn = new THREE.Quaternion();
   private placed = false;
   private dead = false;
 
@@ -182,17 +172,13 @@ export class RemotePlayerActor {
     weapon.position.z -= box.min.z;
     weapon.updateMatrixWorld(true);
 
-    const hold = (arm: Arm, along: number, shift: { side: number; up: number }, hand: HandTurn) => {
+    const hold = (arm: Arm, along: number, shift: { side: number; up: number }) => {
       // The rifle is not rotated in body space, so its box offsets add straight onto its position.
       this.at.set(centreX + shift.side, centreY + shift.up, box.min.z + length * along).add(weapon.position);
       reachWithArm(arm.upper, arm.lower, arm.hand, this.object.localToWorld(this.at));
-      if (!hand.on) return;
-      weapon.getWorldQuaternion(this.turn);
-      this.turn.multiply(this.handTurn.setFromEuler(this.euler.set(hand.x * DEG, hand.y * DEG, hand.z * DEG)));
-      setWorldRotation(arm.hand, this.turn);
     };
-    hold(rig.right, GRIP.trigger, GRIP.rightShift, GRIP.rightHand);
-    hold(rig.left, GRIP.barrel, GRIP.leftShift, GRIP.leftHand);
+    hold(rig.right, GRIP.trigger, GRIP.rightShift);
+    hold(rig.left, GRIP.barrel, GRIP.leftShift);
   }
 
   sync(pose: Pose | null, status: PlayerStatus, dt: number): void {

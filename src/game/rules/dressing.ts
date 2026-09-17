@@ -1,6 +1,6 @@
 import type { LevelLayout, Placement } from "./levelLayout";
 
-// Set dressing for a parsed level: swaps plain kit pieces for variants and adds clutter,
+// Set dressing for a parsed level: swaps plain kit pieces for variants and adds clutter
 // (the kit's grunge decals are left out: their transparency does not survive the web export)
 // all from the same dungeon kit and all decided by cell position, so every client sees the same level.
 export interface Dressed extends Placement {
@@ -9,9 +9,9 @@ export interface Dressed extends Placement {
 }
 
 const WALL_VARIANTS = ["dd_wall_a", "dd_wall_a", "dd_wall_b", "dd_wall_c", "dd_wall_d", "dd_wall_e"];
-const FLOOR_VARIANTS = ["dd_floor_a", "dd_floor_a", "dd_floor_a", "dd_floor_b"];
+// Floor_B reads as a flat, smooth slab next to the kit's main floor, so floors stay Floor_A.
+const FLOOR_VARIANTS = ["dd_floor_a"];
 const ARCH_VARIANTS = ["dd_arch_a", "dd_arch_b", "dd_arch_c"];
-const CAGE_CHANCE = 0.12;
 const CHAIN_CHANCE = 0.04;
 const HANGING_CHAIN_CHANCE = 0.05;
 const WALL_TORCH_CHANCE = 0.07;
@@ -21,7 +21,7 @@ const WALL_TORCH_OUT = 0.35;
 
 export const DRESSING_MODELS = [
   ...new Set([...WALL_VARIANTS, ...FLOOR_VARIANTS, ...ARCH_VARIANTS]),
-  "dd_hanging_cage", "dd_chain_c", "dd_chain_a", "dd_torch",
+  "dd_chain_c", "dd_chain_a", "dd_torch",
 ];
 
 // A stable pseudo-random number in [0, 1) for a cell and a purpose.
@@ -84,9 +84,8 @@ export function dressLevel(layout: LevelLayout): Dressed[] {
         continue;
       }
       const open = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]].every(([dc, dr]) => !solid(c + dc, r + dr));
-      if (open && cellNoise(c, r, 6) < CAGE_CHANCE) {
-        out.push({ model: "dd_hanging_cage", x, y: 0, z, rotationY: cellNoise(c, r, 7) * Math.PI * 2, hang: true });
-      } else if (open && cellNoise(c, r, 11) < HANGING_CHAIN_CHANCE) {
+      // (The kit's hanging cage is taller than these rooms, so it is left out.)
+      if (open && cellNoise(c, r, 11) < HANGING_CHAIN_CHANCE) {
         out.push({ model: "dd_chain_a", x, y: 0, z, rotationY: cellNoise(c, r, 12) * Math.PI * 2, hang: true });
       } else if (!open && cellNoise(c, r, 8) < CHAIN_CHANCE) {
         out.push({ model: "dd_chain_c", x, y: 0, z, rotationY: cellNoise(c, r, 9) * Math.PI * 2 });

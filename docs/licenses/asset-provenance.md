@@ -17,7 +17,7 @@
 
 | art-src 폴더 | 에셋 | 퍼블리셔 | 라이선스 표기 | 가격 | Three.js 변환 사용 | 게임 사용처 |
 |---|---|---|---|---|---|---|
-| Decrepit Dungeon LITE | Decrepit Dungeon LITE | Prodigious Creations | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 바닥·벽(변형 b~e)·천장·기둥·횃불·통·상자, 아치(a~c)와 철창(arch_gate: 봉인문), 열쇠 꾸러미, 탁자(a·b), 촛대, 바닥 철창(floor_gate: 투표 발판·탈출 해치), 사슬(a·c), 매달린 우리 |
+| Decrepit Dungeon LITE | Decrepit Dungeon LITE | Prodigious Creations | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 바닥·벽(변형 b~e)·천장·기둥·횃불·통·상자, 아치(a~c)와 철창(arch_gate: 봉인문), 열쇠 꾸러미, 탁자(a·b), 촛대, 바닥 철창(floor_gate: 투표 발판·탈출 해치), 사슬(a·c) |
 | Free Low Poly Dungeon Pack | Free Low Poly Dungeon Pack | Hyron | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | Stylized Dungeon - Free Pack | Stylized Dungeon - Free Pack | JoJo Studios | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | Laterns and candles | Modular Medieval Lanterns | Alexandr Voevodov | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |

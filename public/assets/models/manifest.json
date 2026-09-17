@@ -60,19 +60,9 @@
       "bytes": 347276,
       "animations": []
     },
-    "dd_floor_b": {
-      "url": "assets/models/dd_floor_b.glb",
-      "bytes": 405376,
-      "animations": []
-    },
     "dd_floor_gate": {
       "url": "assets/models/dd_floor_gate.glb",
       "bytes": 600848,
-      "animations": []
-    },
-    "dd_hanging_cage": {
-      "url": "assets/models/dd_hanging_cage.glb",
-      "bytes": 635908,
       "animations": []
     },
     "dd_key_set": {

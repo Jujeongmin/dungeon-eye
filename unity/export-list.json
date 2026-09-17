@@ -114,11 +114,6 @@
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Table_B.prefab"
     },
     {
-      "name": "dd_floor_b",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_B.prefab"
-    },
-    {
       "name": "dd_floor_gate",
       "kind": "prefab",
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Floor_Gate.prefab"
@@ -152,11 +147,6 @@
       "name": "dd_chain_c",
       "kind": "prefab",
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Chain_C.prefab"
-    },
-    {
-      "name": "dd_hanging_cage",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Hanging_Cage.prefab"
     }
   ]
 }

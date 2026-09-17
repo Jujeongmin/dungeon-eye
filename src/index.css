@@ -48,15 +48,6 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .hud-banner.innocent { color: #8fd3ff; }
 .hud-bound { position: absolute; left: 50%; top: 54%; transform: translateX(-50%); color: #ffb35a; font-weight: 600; pointer-events: none; }
 .hud-prompt.low { top: 64%; }
-.tuner { position: absolute; right: 8px; top: 8px; bottom: 8px; width: 290px; overflow-y: auto; overflow-x: hidden; padding: 10px; background: rgba(12, 10, 9, 0.88); border: 1px solid #4a4038; font-size: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
-.tuner fieldset { border: 1px solid #3a322b; padding: 4px 6px; margin: 0; }
-.tuner legend { color: #f0d9a8; }
-.tuner-row { display: grid; grid-template-columns: 96px 1fr 40px; align-items: center; gap: 4px; }
-.tuner-row output { text-align: right; font-variant-numeric: tabular-nums; }
-.tuner-views, .tuner-actions { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.tuner button { font: inherit; padding: 3px 8px; background: #1b1714; color: #e8e2d6; border: 1px solid #6a5f55; cursor: pointer; }
-.tuner textarea { width: 100%; box-sizing: border-box; font: 11px monospace; background: #0b0a09; color: #e8e2d6; border: 1px solid #3a322b; }
-.tuner-note { margin: 0; opacity: 0.7; }
 .gallery-list { position: absolute; left: 8px; top: 8px; bottom: 8px; width: 170px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; background: rgba(12, 10, 9, 0.85); padding: 6px; font-size: 12px; }
 .gallery-list button { font: inherit; text-align: left; padding: 2px 6px; background: transparent; color: #e8e2d6; border: 0; cursor: pointer; }
 .gallery-list button.on { background: #4a4038; }

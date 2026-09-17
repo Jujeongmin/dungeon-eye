@@ -19,6 +19,12 @@ const GUARD_CANDLES = 10;
 const PLATE_DROP_HEIGHT = 7;
 const PLATE_DROP_SECONDS = 0.45;
 const CANDLE_LIGHT = 0xffa24a;
+// Each dropped grate gets a beam from above and candles on its rim so it reads from across a room.
+const PLATE_SPOT_HEIGHT = 3.8;
+const PLATE_SPOT_IDLE = 0xffd9a0;
+const PLATE_SPOT_SKIP = 0xcfd6e0;
+const PLATE_SPOT_LEADING = 0xff9a3a;
+const PLATE_CANDLES = 3;
 const LABEL_IDLE = "#f0d9a8";
 const LABEL_SKIP = "#c9c1b3";
 const LABEL_LEADING = "#ffb35a";
@@ -28,7 +34,7 @@ const SKIP_LABEL = "건너뛰기";
 interface GateView { bars: THREE.Object3D; raised: number }
 interface KeyView { key: THREE.Object3D; glow: THREE.PointLight }
 interface DeviceView { light: THREE.PointLight }
-interface PlateView { plate: THREE.Object3D; label: THREE.Sprite; text: string; color: string }
+interface PlateView { plate: THREE.Object3D; spot: THREE.SpotLight; label: THREE.Sprite; text: string; color: string }
 
 function boxOf(object: THREE.Object3D): THREE.Box3 {
   object.updateMatrixWorld(true);
@@ -56,7 +62,6 @@ export class ObjectiveProps {
   private readonly keys: KeyView[] = [];
   private readonly devices: DeviceView[] = [];
   private readonly plates: PlateView[] = [];
-  private readonly plateLight = new THREE.PointLight(0x7fb8ff, 0, 7, 2);
   private readonly altarLight = new THREE.PointLight(CANDLE_LIGHT, 0, 10, 2);
   private time = 0;
   private roundKey: number | null = null;
@@ -75,7 +80,6 @@ export class ObjectiveProps {
     for (const at of layout.devices) this.addDevice(at);
     if (layout.altar) this.addAltar(layout.altar);
     for (let i = 0; i <= MATCH_PLAYERS; i++) this.addPlate();
-    scene.add(this.plateLight);
   }
 
   private kit(name: string): THREE.Object3D {
@@ -158,12 +162,22 @@ export class ObjectiveProps {
     const size = boxOf(grate).getSize(new THREE.Vector3());
     grate.scale.setScalar((PLATE_RADIUS * 2) / Math.max(size.x, size.z));
     const plate = grounded(grate);
+    for (let i = 0; i < PLATE_CANDLES; i++) {
+      const a = (i / PLATE_CANDLES) * Math.PI * 2 + 0.4;
+      const candles = grounded(this.kit("dd_candles"));
+      candles.position.set(Math.cos(a) * PLATE_RADIUS * 0.8, 0.02, Math.sin(a) * PLATE_RADIUS * 0.8);
+      candles.rotation.y = a;
+      plate.add(candles);
+    }
     const label = createLabel();
     label.position.y = 2.1;
     plate.add(label);
     plate.visible = false;
+    // Lights stay in the scene at zero so turning them on does not rebuild shaders.
+    const spot = new THREE.SpotLight(PLATE_SPOT_IDLE, 0, PLATE_SPOT_HEIGHT + 2, 0.42, 0.6, 1.5);
+    this.scene.add(spot, spot.target);
     this.scene.add(plate);
-    this.plates.push({ plate, label, text: "", color: "" });
+    this.plates.push({ plate, spot, label, text: "", color: "" });
   }
 
   // names[i] is the display name for match.players[i].
@@ -195,8 +209,10 @@ export class ObjectiveProps {
     const round = match.vote.round;
     if (!round) {
       this.roundKey = null;
-      this.plateLight.intensity = 0;
-      for (const plate of this.plates) plate.plate.visible = false;
+      for (const plate of this.plates) {
+        plate.plate.visible = false;
+        plate.spot.intensity = 0;
+      }
       return;
     }
     if (this.roundKey !== round.startedAt) {
@@ -211,26 +227,29 @@ export class ObjectiveProps {
       // A late joiner should not hear an old landing.
       if (now - round.startedAt < 1500) this.onLand?.();
     }
-    const centre = new THREE.Vector3();
     this.plates.forEach((view, i) => {
       const at = round.plates[i];
       view.plate.visible = !!at;
-      if (!at) return;
-      centre.x += at.x / round.plates.length;
-      centre.z += at.z / round.plates.length;
+      if (!at) {
+        view.spot.intensity = 0;
+        return;
+      }
       view.plate.position.set(at.x, height, at.z);
       const skip = i === match.players.length;
       const accused = skip ? null : match.players[i];
       const text = skip ? SKIP_LABEL : (names[i] ?? "");
-      const color = accused && !isActive(match, accused) ? LABEL_OFF
-        : round.leading === i ? LABEL_LEADING : skip ? LABEL_SKIP : LABEL_IDLE;
+      const off = !!accused && !isActive(match, accused);
+      const leading = round.leading === i;
+      const color = off ? LABEL_OFF : leading ? LABEL_LEADING : skip ? LABEL_SKIP : LABEL_IDLE;
+      view.spot.position.set(at.x, PLATE_SPOT_HEIGHT, at.z);
+      view.spot.target.position.set(at.x, 0, at.z);
+      view.spot.color.setHex(leading ? PLATE_SPOT_LEADING : skip ? PLATE_SPOT_SKIP : PLATE_SPOT_IDLE);
+      view.spot.intensity = t < 1 || off ? 0 : leading ? 70 + Math.sin(this.time * 10) * 20 : 45;
       if (text !== view.text || color !== view.color) {
         view.text = text;
         view.color = color;
         setLabel(view.label, text, color);
       }
     });
-    this.plateLight.position.set(centre.x, 2.5, centre.z);
-    this.plateLight.intensity = t >= 1 ? 10 : 0;
   }
 }

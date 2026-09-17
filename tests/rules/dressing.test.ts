@@ -34,6 +34,6 @@ describe("dressLevel", () => {
       if (p.model === "dd_torch") continue;
       expect(busy.has(cellKey(p.x, p.z))).toBe(false);
     }
-    for (const p of extras.filter((e) => e.model === "dd_hanging_cage")) expect(p.hang).toBe(true);
+    for (const p of extras.filter((e) => e.model === "dd_chain_a")) expect(p.hang).toBe(true);
   });
 });
