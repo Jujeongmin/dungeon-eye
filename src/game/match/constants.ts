@@ -43,6 +43,8 @@ export const WAVE_SIZE = 3;
 
 // Plate votes (Plan 4).
 export const PLATE_RADIUS = 1.2;
-export const PLATE_HOLD_MS = 5_000;
-export const PLATE_LOCK_MS = 90_000;
+export const PLATE_RING_RADIUS = 2.4;
+export const VOTE_DURATION_MS = 30_000;
+// A majority standing on one plate this long decides before the time is up.
+export const VOTE_DECIDE_HOLD_MS = 3_000;
 export const BIND_MS = 20_000;

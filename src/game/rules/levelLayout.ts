@@ -17,7 +17,6 @@ export interface LevelLayout {
   altar: Point2 | null;
   waveSpawns: Point2[];
   bossSpawn: Point2 | null;
-  plates: Point2[];
   gates: Gate[];
 }
 
@@ -35,13 +34,13 @@ export const LEVEL_1: string[] = [
   "###########",
 ];
 
-// Plan 4 map. S rune shard, R vote plate, 1-3 gates, D device, A altar, W wave spawn, K boss.
+// Plan 4 map. S rune shard, 1-3 gates, D device, A altar, W wave spawn, K boss.
 export const RUINS: string[] = [
   "#########################",
   "#P.......S#.............#",
-  "#.R.R.....T.D.........D.#",
+  "#.........T.D.........D.#",
   "#.......Z.#......Z......#",
-  "#.R.R.....1.....#########",
+  "#.........1.....#########",
   "#B........#..Z..2.......#",
   "###.#######.....#.W...W.#",
   "#S..#######T###T#.......#",
@@ -54,7 +53,7 @@ export const RUINS: string[] = [
 
 const PROP: Record<string, string> = { B: "dd_barrel", C: "chest_closed" };
 const GATE_SYMBOLS = new Set(["1", "2", "3"]);
-const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C", "E", "S", "D", "A", "W", "K", "R", ...GATE_SYMBOLS]);
+const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C", "E", "S", "D", "A", "W", "K", ...GATE_SYMBOLS]);
 const SOLID_SYMBOLS = new Set(["#", "T"]);
 
 // Neighbour offset -> rotation that turns a panel's +z toward the floor cell.
@@ -84,7 +83,6 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
   const shards: Point2[] = [];
   const devices: Point2[] = [];
   const waveSpawns: Point2[] = [];
-  const plates: Point2[] = [];
   const gates: Gate[] = [];
   // Asserted so TS keeps the wide types; they are assigned inside the callbacks below.
   let altar = null as Point2 | null;
@@ -123,7 +121,6 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
       if (ch === "A") altar = { x, z };
       if (ch === "W") waveSpawns.push({ x, z });
       if (ch === "K") bossSpawn = { x, z };
-      if (ch === "R") plates.push({ x, z });
       if (GATE_SYMBOLS.has(ch)) gates.push({ n: Number(ch), x, z });
     });
   });
@@ -132,7 +129,7 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
   gates.sort((a, b) => a.n - b.n);
   return {
     tileSize, cols, rows: rows.length, solid, placements, playerSpawn, zombieSpawns, exits,
-    shards, devices, altar, waveSpawns, bossSpawn, plates, gates,
+    shards, devices, altar, waveSpawns, bossSpawn, gates,
   };
 }
 

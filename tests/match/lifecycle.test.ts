@@ -113,7 +113,7 @@ describe("plan 4 state", () => {
       stage: "shards", shards: [false, false], devices: [0, 0], gates: [],
       seal: { progressMs: 0, lastAt: null, waves: 0 },
     });
-    expect(match.vote).toEqual({ plate: null, since: 0, lockedUntil: 0, last: null });
+    expect(match.vote).toEqual({ held: 0, round: null, last: null });
     expect(match.bound).toEqual({});
     expect(match.revealed).toBeNull();
   });

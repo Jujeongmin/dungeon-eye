@@ -134,6 +134,8 @@ export function skipToStage(match: PublicMatch, level: ObjectiveLayout, stage: S
     boss.alive = false;
   }
   o.stage = stage;
+  // Skipping past gates would queue a vote for each; keep only the latest gate's vote.
+  match.vote.held = Math.max(match.vote.held, o.gates.length - 1);
 }
 
 function openGate(match: PublicMatch, n: number): void {

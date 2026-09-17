@@ -14,7 +14,6 @@ describe("RUINS", () => {
     expect(level.altar).toEqual({ x: 82, z: 34 });
     expect(level.waveSpawns).toHaveLength(4);
     expect(level.bossSpawn).toEqual({ x: 54, z: 38 });
-    expect(level.plates).toEqual([{ x: 10, z: 10 }, { x: 18, z: 10 }, { x: 10, z: 18 }, { x: 18, z: 18 }]);
     expect(level.gates).toEqual([{ n: 1, x: 42, z: 18 }, { n: 2, x: 66, z: 22 }, { n: 3, x: 66, z: 42 }]);
     expect(level.exits).toEqual([{ x: 54, z: 46 }]);
   });
@@ -29,7 +28,6 @@ describe("RUINS", () => {
   it("opens one zone per gate", () => {
     const reach = (open: number[], to: { x: number; z: number }) => findPath(level, level.playerSpawn, to, solidWith(level, open)) !== null;
     for (const s of level.shards) expect(reach([], s)).toBe(true);
-    for (const p of level.plates) expect(reach([], p)).toBe(true);
     expect(reach([], level.devices[0])).toBe(false);
     expect(reach([1], level.devices[1])).toBe(true);
     expect(reach([1], level.altar!)).toBe(false);

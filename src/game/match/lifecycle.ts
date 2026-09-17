@@ -17,7 +17,7 @@ export function createObjectives(): ObjectiveState {
 }
 
 export function createVote(): VoteState {
-  return { plate: null, since: 0, lockedUntil: 0, last: null };
+  return { held: 0, round: null, last: null };
 }
 
 export function createLobby(now: number): PublicMatch {

@@ -39,13 +39,23 @@ export interface ObjectiveState {
   seal: SealState;
 }
 
-export interface VoteRecord { accused: string; guilty: boolean; at: number }
+// accused is null when the round was skipped or undecided.
+export interface VoteRecord { accused: string | null; guilty: boolean; at: number }
+
+export interface VoteRound {
+  startedAt: number;
+  endsAt: number;
+  // plates[i] names players[i]; the last plate is "skip".
+  plates: Vec2[];
+  // Plate a majority stands on right now, and since when.
+  leading: number | null;
+  since: number;
+}
 
 export interface VoteState {
-  // Plate that currently has enough voters, and since when.
-  plate: number | null;
-  since: number;
-  lockedUntil: number;
+  // Rounds opened so far; one opens for each gate.
+  held: number;
+  round: VoteRound | null;
   last: VoteRecord | null;
 }
 
