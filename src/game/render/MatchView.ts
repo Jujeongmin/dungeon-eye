@@ -10,7 +10,7 @@ import type { MatchResult, PlayerResult, Pose, Possession, PublicMatch } from ".
 import { distance } from "../match/view";
 import { ZOMBIE_HEIGHT, ZOMBIE_RADIUS, resolveShot, type HitTarget, type Ray3 } from "../rules/combat";
 import { LEVEL_1, TILE_SIZE, parseLevel, solidAt, spawnPoint, type LevelLayout } from "../rules/levelLayout";
-import { EYE_HEIGHT, PLAYER_RADIUS, applyLook, stepPlayer } from "../rules/movement";
+import { EYE_HEIGHT, applyLook, stepPlayer } from "../rules/movement";
 import { FpsInput } from "./FpsInput";
 import { MonsterActor } from "./MonsterActor";
 import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
@@ -30,7 +30,6 @@ export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1"];
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED = ZOMBIE_SPEED * 1.3;
 const HUD_INTERVAL_MS = 100;
-const PLAYER_HEIGHT = 1.8;
 
 export interface HudState {
   phase: ClientPhase;
@@ -268,21 +267,14 @@ export class MatchView {
       ox: this.camera.position.x, oy: this.camera.position.y, oz: this.camera.position.z,
       dx: this.aim.x, dy: this.aim.y, dz: this.aim.z,
     };
-    const me = this.client.account;
     const targets: HitTarget[] = [];
     for (const [id, m] of Object.entries(match.monsters)) {
-      if (m.alive) targets.push({ id: `m:${id}`, x: m.x, z: m.z, radius: ZOMBIE_RADIUS, height: ZOMBIE_HEIGHT, alive: true });
-    }
-    for (const account of match.players) {
-      const p = this.client.state.poses[account];
-      if (account === me || !p || !isActive(match, account)) continue;
-      targets.push({ id: `p:${account}`, x: p.x, z: p.z, radius: PLAYER_RADIUS, height: PLAYER_HEIGHT, alive: true });
+      if (m.alive) targets.push({ id, x: m.x, z: m.z, radius: ZOMBIE_RADIUS, height: ZOMBIE_HEIGHT, alive: true });
     }
     const hit = resolveShot(ray, targets, this.isSolid, AKM_RANGE, TILE_SIZE);
     if (!hit) return Promise.resolve("miss");
-    const id = hit.id.slice(2);
-    const call = hit.id.startsWith("m:") ? this.client.fireAtMonster(id) : this.client.fireAtPlayer(id);
-    return call.then((code) => {
+    // Guns only hurt monsters: nobody can shoot another player, the traitor included.
+    return this.client.fireAtMonster(hit.id).then((code) => {
       if (code) this.fail(code);
       return code;
     });

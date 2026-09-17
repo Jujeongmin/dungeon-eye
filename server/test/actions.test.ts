@@ -76,27 +76,6 @@ describe("possession", () => {
     expect((await roomMatch(roomId)).monsters["zombie-0"].hp).toBe(66);
   });
 
-  test("shooting the frozen body frees the monster and stuns it", async (server) => {
-    const roomId = await fillRoom(server);
-    const traitor = await findTraitor(server, roomId);
-    const shooter = PLAYERS.filter((p) => p !== traitor)[0];
-    await placeAll(server, roomId, { [traitor]: { x: 30, z: 14 }, [shooter]: { x: 30, z: 20 } });
-    actAs(server, traitor, roomId);
-    await server.devAdvanceClock(MINUTE);
-    await server.possess("zombie-0");
-
-    actAs(server, shooter, roomId);
-    await server.fireAtPlayer(traitor);
-
-    actAs(server, traitor, roomId);
-    const you = (await server.getMatchState()).you;
-    expect(you.possession).toBeNull();
-    expect(you.hp).toBe(66);
-    const zombie = (await roomMatch(roomId)).monsters["zombie-0"];
-    expect(zombie.possessed).toBe(false);
-    expect(zombie.stunnedUntil > 0).toBe(true);
-  });
-
   test("the traitor can let go early", async (server) => {
     const roomId = await fillRoom(server);
     const traitor = await findTraitor(server, roomId);

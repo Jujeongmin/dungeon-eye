@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  AKM_DAMAGE, BODY_HIT_STUN_MS, MONSTER_DEATH_BODY_DAMAGE, POSSESS_COOLDOWN_MS, POSSESS_DURATION_MS,
+  AKM_DAMAGE, MONSTER_DEATH_BODY_DAMAGE, POSSESS_COOLDOWN_MS, POSSESS_DURATION_MS,
   ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_INTERVAL_MS,
 } from "../../src/game/match/constants";
 import {
-  applyMonsterPoses, monsterAttack, monsterAuthority, reachExit, shootMonster, shootPlayer,
+  applyMonsterPoses, monsterAttack, monsterAuthority, reachExit, shootMonster,
 } from "../../src/game/match/damage";
 import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
 import { startPossession } from "../../src/game/match/possession";
@@ -135,43 +135,6 @@ describe("shootMonster", () => {
       { type: "possession", monsterId: "zombie-0", active: false, endsAt: null },
       { type: "private", account: "c" },
     ]);
-  });
-});
-
-describe("shootPlayer", () => {
-  it("allows friendly fire and records it", () => {
-    const { match, secret, poses } = playing();
-    const events = shootPlayer(match, secret, "a", "b", poses.a, poses.b, T);
-    expect(events).toEqual([{ type: "private", account: "b" }]);
-    expect(secret.hp.b).toBe(100 - AKM_DAMAGE);
-    expect(secret.stats.a).toMatchObject({ playerDamage: AKM_DAMAGE, traitorDamage: 0 });
-  });
-
-  it("breaks the possession and stuns the monster when the frozen body is shot", () => {
-    const { match, secret, poses } = possessing();
-    shootPlayer(match, secret, "a", "c", poses.a, poses.c, T + 1);
-    expect(secret.possession).toBeNull();
-    expect(match.monsters["zombie-0"].stunnedUntil).toBe(T + 1 + BODY_HIT_STUN_MS);
-    expect(secret.hp.c).toBe(100 - AKM_DAMAGE);
-    expect(secret.stats.a.traitorDamage).toBe(AKM_DAMAGE);
-  });
-
-  it("marks a player dead at zero hp", () => {
-    const { match, secret, poses } = playing();
-    secret.hp.b = 20;
-    shootPlayer(match, secret, "a", "b", poses.a, poses.b, T);
-    expect(secret.hp.b).toBe(0);
-    expect(match.dead).toEqual(["b"]);
-    expect(secret.stats.a.playerDamage).toBe(20);
-  });
-
-  it("refuses bad targets", () => {
-    const { match, secret, poses } = playing();
-    expect(() => shootPlayer(match, secret, "a", "a", poses.a, poses.a, T)).toThrow("no_target");
-    expect(() => shootPlayer(match, secret, "a", "z", poses.a, at(0, 0), T)).toThrow("no_target");
-    expect(() => shootPlayer(match, secret, "a", "b", poses.a, null, T)).toThrow("out_of_range");
-    match.dead.push("b");
-    expect(() => shootPlayer(match, secret, "a", "b", poses.a, poses.b, T)).toThrow("no_target");
   });
 });
 

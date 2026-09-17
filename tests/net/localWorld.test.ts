@@ -40,15 +40,14 @@ describe("LocalWorld", () => {
   it("emits the changed room state before the messages", async () => {
     const world = new LocalWorld(new Server());
     const roomId = await fill(world);
-    await world.call(PLAYERS[0], roomId, "reportPose", [{ x: 6, z: 6, yaw: 0 }]);
-    await world.call(PLAYERS[1], roomId, "reportPose", [{ x: 6, z: 9, yaw: 0 }]);
+    await world.call(PLAYERS[1], roomId, "reportPose", [{ x: 34, z: 14, yaw: 0 }]);
     const events: WorldEvent[] = [];
     world.subscribe((e) => events.push(e));
-    await world.call(PLAYERS[0], roomId, "fireAtPlayer", [PLAYERS[1]]);
+    await world.call(PLAYERS[0], roomId, "attackWithMonster", ["zombie-0", PLAYERS[1]]);
     expect(events.map((e) => e.kind)).toEqual(["roomState", "message"]);
     const message = events[1] as Extract<WorldEvent, { kind: "message" }>;
     expect(message).toMatchObject({ roomId, to: PLAYERS[1], type: "private" });
-    expect((message.message as { hp: number }).hp).toBe(66);
+    expect((message.message as { hp: number }).hp).toBe(80);
   });
 
   it("reports user states as account plus state", async () => {

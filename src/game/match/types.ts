@@ -45,7 +45,6 @@ export interface Possession { monsterId: string; endsAt: number }
 export interface PlayerStats {
   monsterKills: number;
   monsterDamage: number;
-  playerDamage: number;
   traitorDamage: number;
   possessions: number;
   possessedDamage: number;

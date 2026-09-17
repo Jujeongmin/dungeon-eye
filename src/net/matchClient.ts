@@ -164,10 +164,6 @@ export class MatchClient {
     return this.act("fireAtMonster", [monsterId]);
   }
 
-  fireAtPlayer(target: string): Promise<string | null> {
-    return this.act("fireAtPlayer", [target]);
-  }
-
   attackWithMonster(monsterId: string, target: string): Promise<string | null> {
     return this.act("attackWithMonster", [monsterId, target]);
   }

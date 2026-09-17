@@ -10,7 +10,6 @@ export const POSSESS_RANGE = 12;
 export const LINK_DAMAGE_RATIO = 0.4;
 export const MONSTER_DEATH_BODY_DAMAGE = 35;
 export const PAIN_RADIUS = 10;
-export const BODY_HIT_STUN_MS = 2_000;
 
 export const ZOMBIE_HP = 100;
 export const ZOMBIE_ATTACK_DAMAGE = 20;

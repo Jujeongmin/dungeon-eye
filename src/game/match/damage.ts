@@ -1,5 +1,5 @@
 import {
-  AKM_DAMAGE, AKM_FIRE_INTERVAL_MS, AKM_RANGE, BODY_HIT_STUN_MS, EXIT_RADIUS, LINK_DAMAGE_RATIO,
+  AKM_DAMAGE, AKM_FIRE_INTERVAL_MS, AKM_RANGE, EXIT_RADIUS, LINK_DAMAGE_RATIO,
   MONSTER_DEATH_BODY_DAMAGE, PAIN_RADIUS, RANGE_SLACK, ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_INTERVAL_MS,
   ZOMBIE_ATTACK_RANGE,
 } from "./constants";
@@ -68,32 +68,6 @@ export function shootMonster(
     events.push(...damageBody(match, secret, traitor, body, now));
     if (killed) events.push(...endPossession(match, secret, now));
   }
-  return events;
-}
-
-export function shootPlayer(
-  match: PublicMatch, secret: SecretMatch, shooter: string, target: string,
-  shooterPose: Pose | null, targetPose: Pose | null, now: number,
-): MatchEvent[] {
-  const events = expirePossession(match, secret, now);
-  const from = beginShot(match, secret, shooter, shooterPose, now);
-  if (target === shooter || !isActive(match, target)) throw new RuleViolation("no_target");
-  if (!targetPose || distance(from, targetPose) > AKM_RANGE + RANGE_SLACK) throw new RuleViolation("out_of_range");
-
-  secret.lastShotAt[shooter] = now;
-  const applied = Math.min(AKM_DAMAGE, secret.hp[target] ?? 0);
-  const stats = secret.stats[shooter];
-  stats.playerDamage += applied;
-  if (target === secret.traitor) {
-    stats.traitorDamage += applied;
-    const possession = secret.possession;
-    if (possession) {
-      events.push(...endPossession(match, secret, now));
-      const monster = match.monsters[possession.monsterId];
-      if (monster) monster.stunnedUntil = now + BODY_HIT_STUN_MS;
-    }
-  }
-  events.push(...damageBody(match, secret, target, AKM_DAMAGE, now));
   return events;
 }
 

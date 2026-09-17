@@ -1,6 +1,6 @@
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
 import {
-  applyMonsterPoses, monsterAttack, reachExit, shootMonster, shootPlayer, type MonsterPoseUpdate,
+  applyMonsterPoses, monsterAttack, reachExit, shootMonster, type MonsterPoseUpdate,
 } from "../../src/game/match/damage";
 import { createLobby, joinLobby, leaveLobby, monsterSpawnsFor, startMatch } from "../../src/game/match/lifecycle";
 import { markLeft, resolveOutcome, settleResults } from "../../src/game/match/outcome";
@@ -201,16 +201,6 @@ export class Server {
       const secret = requireLive(ctx);
       const poses = await readPoses(ctx.roomId, ctx.match.players);
       ctx.events.push(...shootMonster(ctx.match, secret, ctx.account, id, poses[ctx.account] ?? null, poses, ctx.now));
-    });
-  }
-
-  async fireAtPlayer(target: unknown): Promise<void> {
-    const who = requireText(target);
-    await inRoom(async (ctx) => {
-      const secret = requireLive(ctx);
-      const from = await readPose(ctx.roomId, ctx.account);
-      const to = await readPose(ctx.roomId, who);
-      ctx.events.push(...shootPlayer(ctx.match, secret, ctx.account, who, from, to, ctx.now));
     });
   }
 

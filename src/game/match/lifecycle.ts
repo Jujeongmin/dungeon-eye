@@ -64,7 +64,7 @@ export function startMatch(match: PublicMatch, now: number, rng: () => number, s
 }
 
 export function emptyStats(): PlayerStats {
-  return { monsterKills: 0, monsterDamage: 0, playerDamage: 0, traitorDamage: 0, possessions: 0, possessedDamage: 0 };
+  return { monsterKills: 0, monsterDamage: 0, traitorDamage: 0, possessions: 0, possessedDamage: 0 };
 }
 
 export function isActive(match: PublicMatch, account: string): boolean {

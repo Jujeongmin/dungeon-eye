@@ -66,12 +66,12 @@ describe("MatchClient", () => {
   it("applies private updates to the player they are for", async () => {
     const world = new LocalWorld(new Server());
     const [a, b] = await joinAll(world);
-    a.reportPose({ x: 6, z: 6, yaw: 0 });
-    b.reportPose({ x: 6, z: 9, yaw: 0 });
+    // test-a is the first active player, so it drives the unpossessed monsters.
+    b.reportPose({ x: 34, z: 14, yaw: 0 });
     await settle(world);
-    expect(await a.fireAtPlayer("test-b")).toBeNull();
+    expect(await a.attackWithMonster("zombie-0", "test-b")).toBeNull();
     await settle(world);
-    expect(b.state.you.hp).toBe(66);
+    expect(b.state.you.hp).toBe(80);
     expect(a.state.you.hp).toBe(100);
   });
 
