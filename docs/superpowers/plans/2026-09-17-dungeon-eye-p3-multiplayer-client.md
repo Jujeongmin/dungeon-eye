@@ -3061,7 +3061,7 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
 
   return (
     <div className="app" ref={host}>
-      {ready && hud && <Hud hud={hud} now={now} />}
+      {ready && hud && !result && <Hud hud={hud} now={now} />}
       {!ready && !loadError && <div className="overlay">불러오는 중 {progress.done}/{progress.total}</div>}
       {loadError && <div className="overlay error">불러오기 실패: {loadError}</div>}
       {ready && waiting && <div className="overlay dim">플레이어를 기다리는 중 {hud.players}/4</div>}
