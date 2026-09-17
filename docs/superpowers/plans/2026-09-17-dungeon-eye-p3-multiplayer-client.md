@@ -448,7 +448,7 @@ git commit -m "feat: monster chase and attack decisions"
 
 ### Task 3: 브라우저 안에서 서버 돌리기 (LocalWorld)
 
-`server/src/server.ts`는 Verse8 전역(`$global`, `$room`, `$sender`, `$lock`)만 쓴다. 이 전역을 메모리로 흉내 내면 같은 서버 코드를 연습 모드와 vitest에서 돌릴 수 있다. 호출은 한 번에 하나씩(직렬) 처리하고, 호출하는 동안에만 전역을 그 호출자의 것으로 바꿔 끼운다. 실서버처럼 주고받는 값은 JSON 복사한다.
+`server/src/server.ts`는 Verse8 전역(`$global`, `$room`, `$sender`, `$lock`)만 쓴다. 이 전역을 메모리로 흉내 내면 같은 서버 코드를 연습 모드와 vitest에서 돌릴 수 있다. 호출은 한 번에 하나씩(직렬) 처리하고 — 전역은 프로세스 전체에 하나뿐이므로 **모든 LocalWorld가 대기열 하나를 함께 쓴다** — 호출하는 동안에만 전역을 그 호출자의 것으로 바꿔 끼운다. 실서버처럼 주고받는 값은 JSON 복사한다.
 
 동작 규칙(Plan 2에서 확인한 Verse8 동작과 맞춤):
 - `getRoomState(id)`는 `{ roomId, $users, ...state }`. 없는 방은 `{ roomId, $users: [] }`.
@@ -584,6 +584,21 @@ describe("LocalWorld", () => {
     expect((globalThis as Record<string, unknown>).$sender).toBeUndefined();
   });
 
+  it("keeps two worlds apart even when their calls overlap", async () => {
+    const first = new LocalWorld(new Server());
+    const second = new LocalWorld(new Server());
+    const calls: Promise<unknown>[] = [];
+    for (const p of PLAYERS) {
+      calls.push(first.call(p, null, "findMatch"));
+      calls.push(second.call(`${p}-2`, null, "findMatch"));
+    }
+    const ids = (await Promise.all(calls)).map((r) => (r as { roomId: string }).roomId);
+    const firstRoom = first.roomState(ids[0]);
+    const secondRoom = second.roomState(ids[1]);
+    expect(firstRoom.match.players).toEqual(PLAYERS);
+    expect(secondRoom.match.players).toEqual(PLAYERS.map((p) => `${p}-2`));
+  });
+
   it("copies values so callers cannot change stored state", async () => {
     const world = new LocalWorld(new Server());
     const roomId = await fill(world);
@@ -644,6 +659,9 @@ function copy<T>(value: T): T {
 
 const GLOBAL_NAMES = ["$global", "$room", "$sender", "$lock"] as const;
 
+// The Verse8 globals are process-wide, so every world must take turns, not just calls within one world.
+let sharedQueue: Promise<unknown> = Promise.resolve();
+
 export class LocalWorld {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly userStates = new Map<string, Json>();
@@ -652,7 +670,6 @@ export class LocalWorld {
   private readonly dirtyRooms = new Set<string>();
   private readonly dirtyUsers = new Set<string>();
   private pendingMessages: WorldEvent[] = [];
-  private queue: Promise<unknown> = Promise.resolve();
   private seq = 0;
 
   constructor(private readonly server: object) {}
@@ -686,8 +703,8 @@ export class LocalWorld {
 
   async idle(): Promise<void> {
     let seen: Promise<unknown> | null = null;
-    while (seen !== this.queue) {
-      seen = this.queue;
+    while (seen !== sharedQueue) {
+      seen = sharedQueue;
       await seen;
     }
   }
@@ -698,8 +715,8 @@ export class LocalWorld {
   }
 
   private enqueue(work: () => Promise<unknown>): Promise<unknown> {
-    const result = this.queue.then(work, work);
-    this.queue = result.catch(() => undefined);
+    const result = sharedQueue.then(work, work);
+    sharedQueue = result.catch(() => undefined);
     return result;
   }
 
@@ -847,7 +864,7 @@ export class LocalWorld {
 - [ ] **Step 5: 통과 확인**
 
 Run: `npx vitest run tests/net/localWorld.test.ts && npm test && npm run typecheck`
-Expected: localWorld 8 PASS, 전체 117 PASS, 타입 에러 없음.
+Expected: localWorld 9 PASS, 전체 118 PASS, 타입 에러 없음.
 
 타입 에러가 `server/src/*.ts`에서 나면(예: `noUnusedLocals`), 그 파일을 고치지 말고 에러 내용을 보고한다 — 서버 파일은 Plan 2의 서버 테스트로 검증된 상태다.
 
@@ -1134,7 +1151,7 @@ export class Verse8Transport implements MatchTransport {
 - [ ] **Step 4: 통과 확인**
 
 Run: `npx vitest run tests/net/transport.test.ts && npm test && npm run typecheck`
-Expected: transport 7 PASS, 전체 124 PASS, 타입 에러 없음.
+Expected: transport 7 PASS, 전체 125 PASS, 타입 에러 없음.
 
 - [ ] **Step 5: 커밋**
 
@@ -1667,7 +1684,7 @@ export class MatchClient {
 - [ ] **Step 5: 통과 확인**
 
 Run: `npx vitest run tests/net/matchClient.test.ts && npm test && npm run typecheck && npm run server:typecheck && npm run server:test`
-Expected: matchClient 10 PASS, 전체 134 PASS, 타입 에러 없음, 서버 테스트 20 PASS(`types.ts` 변경 확인).
+Expected: matchClient 10 PASS, 전체 135 PASS, 타입 에러 없음, 서버 테스트 20 PASS(`types.ts` 변경 확인).
 
 - [ ] **Step 6: 커밋**
 
@@ -2059,7 +2076,7 @@ export class PracticeSession {
 - [ ] **Step 6: 통과 확인**
 
 Run: `npx vitest run tests/bots/botMatch.test.ts && npm test && npm run typecheck`
-Expected: botMatch 2 PASS, 전체 136 PASS, 타입 에러 없음.
+Expected: botMatch 2 PASS, 전체 137 PASS, 타입 에러 없음.
 
 실패하면: 두 번째 테스트가 `endedAt = Infinity`(9분 안에 안 끝남)면 봇이 어딘가에 끼인 것이다. `session`의 봇 위치를 1초마다 출력해 어느 칸에서 멈추는지 보고, 원인(길찾기 경로, 벽 미끄러짐, `busy`가 풀리지 않음)을 고친다. 서버 규칙은 바꾸지 않는다.
 
@@ -2867,7 +2884,7 @@ export default function App() {
 - [ ] **Step 7: 확인**
 
 Run: `npm run typecheck && npm test && npm run build`
-Expected: 타입 에러 없음, 전체 136 PASS, 빌드 성공.
+Expected: 타입 에러 없음, 전체 137 PASS, 빌드 성공.
 
 - [ ] **Step 8: 커밋**
 
@@ -3173,7 +3190,7 @@ function OnlineMatch({ onExit }: { onExit: () => void }) {
 - [ ] **Step 6: 타입·테스트·빌드**
 
 Run: `npm run typecheck && npm test && npm run build`
-Expected: 타입 에러 없음, 136 PASS, 빌드 성공.
+Expected: 타입 에러 없음, 137 PASS, 빌드 성공.
 
 - [ ] **Step 7: 브라우저 확인 (연습 모드)**
 
@@ -3277,7 +3294,7 @@ git push origin master
 
 ## 완료 기준 (Plan 3)
 
-- vitest 136 PASS, 서버 테스트 20 PASS, 타입 검사·빌드 통과
+- vitest 137 PASS, 서버 테스트 20 PASS, 타입 검사·빌드 통과
 - 연습 모드에서 봇 3명과 한 판을 끝까지 할 수 있다(모험가: 사격·탈출, 배신자: 빙의·조종·공격·해제)
 - 봇만으로 한 판이 끝까지 돌아가는 자동 테스트가 있다
 - Verse8 프로젝트가 준비되면 같은 화면이 실서버로 4인 접속된다(작업 9, 사용자 준비 후)

@@ -78,10 +78,13 @@ export type MatchEvent =
   | { type: "possession"; monsterId: string; active: boolean; endsAt: number | null }
   | { type: "ended" };
 
-export type RuleError =
-  | "not_playing" | "not_traitor" | "not_ready" | "already_possessing" | "not_possessing"
-  | "unavailable" | "no_monster" | "monster_dead" | "out_of_range" | "too_fast"
-  | "not_authority" | "stunned" | "no_target" | "not_at_exit" | "match_full";
+export const RULE_ERRORS = [
+  "not_playing", "not_traitor", "not_ready", "already_possessing", "not_possessing",
+  "unavailable", "no_monster", "monster_dead", "out_of_range", "too_fast",
+  "not_authority", "stunned", "no_target", "not_at_exit", "match_full",
+] as const;
+
+export type RuleError = (typeof RULE_ERRORS)[number];
 
 export class RuleViolation extends Error {
   readonly code: RuleError;
