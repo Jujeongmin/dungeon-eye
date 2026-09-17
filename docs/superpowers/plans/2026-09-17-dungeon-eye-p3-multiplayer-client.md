@@ -304,6 +304,7 @@ import { describe, expect, it } from "vitest";
 import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
 import { ZOMBIE_AGGRO_RANGE, ZOMBIE_SPEED, stepMonsterAi } from "../../src/game/match/monsterAi";
 import type { Pose, Poses } from "../../src/game/match/types";
+import { PLAYER_RADIUS } from "../../src/game/rules/movement";
 
 const open = () => false;
 const at = (x: number, z: number): Pose => ({ x, z, yaw: 0 });
@@ -369,11 +370,12 @@ describe("stepMonsterAi", () => {
     expect(stepMonsterAi(skipped, poses, open, 0.1, 0, (id) => id === "zombie-0").updates).toEqual([]);
   });
 
-  it("does not walk into walls", () => {
+  it("walks up to a wall but not into it", () => {
     const match = playing();
     const wallAhead = (_x: number, z: number) => z > 10.5;
     const step = stepMonsterAi(match, { b: at(10, 14) }, wallAhead, 0.1, 0, never);
-    expect(step.updates[0].z).toBeCloseTo(10);
+    expect(step.updates[0].z).toBeGreaterThan(10);
+    expect(step.updates[0].z + PLAYER_RADIUS).toBeLessThanOrEqual(10.5);
   });
 });
 ```
