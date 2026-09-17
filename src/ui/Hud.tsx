@@ -80,13 +80,13 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
       {hud.role === "traitor" && inside && <div className="hud-possess">{possessionText(hud)}</div>}
       {inside && hud.interactHint && <div className="hud-prompt">{hud.interactHint}</div>}
       {hud.nearExit && <div className="hud-prompt low">F: 탈출</div>}
-      {inside && hud.plate && (
+      {inside && hud.plate && hud.plateLockedMs === null && (
         <div className="hud-vote">
           {hud.plate.accused} 지목 발판 · {hud.plate.votes}/{hud.plate.needed}명
           {hud.plate.votes >= hud.plate.needed && ` · ${seconds(Math.max(0, PLATE_HOLD_MS - hud.plate.heldMs))}초`}
         </div>
       )}
-      {inside && !hud.plate && hud.plateLockedMs !== null && (
+      {inside && hud.plate && hud.plateLockedMs !== null && (
         <div className="hud-vote dim">발판 잠김 {seconds(hud.plateLockedMs)}초</div>
       )}
       {vote && (
