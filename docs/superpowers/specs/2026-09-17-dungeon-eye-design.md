@@ -117,20 +117,28 @@
 | 몬스터 — 확인 필요(리깅 여부 불명) | Feline Gargoyle (카테고리가 props라 정적 모델일 가능성) | https://assetstore.unity.com/packages/3d/props/feline-gargoyle-27106 |
 | 몬스터(큐레이션, 추가 탐색용) | Free Fantasy Creatures 목록 | https://assetstore.unity.com/lists/free-fantasy-creatures-11348 |
 | 몬스터(큐레이션, 추가 탐색용) | Free Monsters 목록 | https://assetstore.unity.com/lists/free-monsters-14593 |
-| FPS 무기 | FA: FPS Weapons Pack - Free | https://assetstore.unity.com/packages/3d/props/guns/fa-fps-weapons-pack-free-254020 |
-| FPS 무기 | Free FPS Weapon - MP7 | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-mp7-177246 |
-| FPS 무기 | Free FPS Weapon - AKM | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-akm-180663 |
-| FPS 무기 | Free Pack - Gun | https://assetstore.unity.com/packages/3d/props/guns/free-pack-gun-308387 |
-| FPS 무기(큐레이션) | Best Free Weapons 목록 | https://assetstore.unity.com/lists/best-free-weapons-42298 |
-| 사람 캐릭터 | FREE Low Poly Human - RPG Character | https://assetstore.unity.com/packages/3d/characters/humanoids/fantasy/free-low-poly-human-rpg-character-219979 |
-| 사람 캐릭터 | Character Pack: Free Sample | https://assetstore.unity.com/packages/3d/characters/humanoids/character-pack-free-sample-79870 |
-| 사람 캐릭터(필터 적용된 검색) | 에셋스토어 무료 캐릭터 전체 | https://assetstore.unity.com/?category=3d%2Fcharacters&free=true&orderBy=1 |
+| FPS 무기 — 주력 소총 후보 1 | FPS AKM - Model & Textures (ChamferZone, 153개 평점) | https://assetstore.unity.com/packages/3d/fps-akm-model-textures-63654 |
+| FPS 무기 — 주력 소총 후보 2 | Free FPS Weapon - AKM (Delthor Games) | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-akm-180663 |
+| FPS 무기 — 주력 소총 후보 3 | Assault Rifle A3 (35개 평점) | https://assetstore.unity.com/packages/3d/props/guns/assault-rifle-a3-2107 |
+| FPS 무기 — 보조무기 | Reichsrevolver M-1879 (41개 평점, 리얼 계열 리볼버) | https://assetstore.unity.com/packages/3d/props/guns/reichsrevolver-m-1879-63609 |
+| FPS 무기 — 보조무기 | Free FPS Weapon - MP7 | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-mp7-177246 |
+| FPS 무기 — 세트팩 | FA: FPS Weapons Pack - Free | https://assetstore.unity.com/packages/3d/props/guns/fa-fps-weapons-pack-free-254020 |
+| FPS 무기(큐레이션, 추가 탐색용) | Best Free Weapons 목록 | https://assetstore.unity.com/lists/best-free-weapons-42298 |
+| 사람 캐릭터 — 1순위 | Adventurer Blake (ManNeko) — 던전 모험가 테마 그대로, 권총+PBR+Humanoid 애니메이션 세트 동봉, 즐겨찾기 748 | https://assetstore.unity.com/packages/3d/characters/humanoids/adventurer-blake-158728 |
+| 사람 캐릭터 — 2순위 | Bodyguards (Batewar, 173개 평점) — 리얼 계열, 캐릭터 3+보너스 1 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/bodyguards-31711 |
+| 사람 캐릭터 — 3순위 | Contract Killer (Jellymobile, 4.9점) — 리얼 계열 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/contract-killer-29235 |
+| 사람 캐릭터 — 다양성용 | 3 Free Characters (HONETi, 149개 평점, 즐겨찾기 1363) | https://assetstore.unity.com/packages/3d/characters/humanoids/fantasy/3-free-characters-18098 |
+| 사람 캐릭터 — 테마 보조 | Free Scavenger (Paul N.) — 던전 생존자 컨셉과 잘 맞음 | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/free-scavenger-261065 |
+| 사람 캐릭터(필터 적용된 검색, 추가 탐색용) | 에셋스토어 무료 캐릭터 전체 | https://assetstore.unity.com/?category=3d%2Fcharacters&free=true&orderBy=1 |
 
-**사람 캐릭터 관련 솔직한 평가**: 에셋스토어 무료 항목 중 "리얼한" 사람 캐릭터는 거의 없고
-대부분 로우폴리/스타일라이즈드다. 대안으로 **Adobe Mixamo**(무료, 계정만 필요)를 권장 —
-비교적 사실적인 리깅된 인간형 캐릭터 + 방대한 애니메이션 라이브러리를 FBX로 제공하고,
-Three.js/glTF 파이프라인으로 옮긴 사례도 많아 dungeon-warden 압축 파이프라인과 궁합이 좋음.
-https://www.mixamo.com
+**주의**:
+- "FPS AKM - Model & Textures"는 이름상 모델+텍스처만 포함하고 리깅/사격 애니메이션은
+  없을 가능성이 있음 — 받으면 먼저 확인하고, 없으면 FA: FPS Weapons Pack의 손+애니메이션과
+  조합하거나 Mixamo 손 애니메이션을 입혀야 함.
+- 사람 캐릭터 중 진짜 "리얼한" 편은 Bodyguards·Contract Killer·Adventurer Blake 정도고
+  나머지는 스타일라이즈드에 가까움. 더 사실적인 게 필요하면 **Adobe Mixamo**(무료, 계정만
+  필요, https://www.mixamo.com )가 대안 — 리깅된 인간형 + 방대한 애니메이션을 FBX로 제공,
+  Three.js/glTF 파이프라인으로 옮긴 사례도 많아 dungeon-warden 압축 파이프라인과 궁합 좋음.
 
 파일 받으면 전달해줄 것 — 받는 대로 라이선스 조건 같이 확인하고 `gltf-transform` 변환
 파이프라인에 태우겠음.
