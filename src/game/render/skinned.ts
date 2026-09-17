@@ -40,6 +40,10 @@ export class ActionBlender {
     this.current = first.play();
   }
 
+  get active(): THREE.AnimationAction {
+    return this.current;
+  }
+
   fadeTo(next: THREE.AnimationAction, seconds = 0.15): void {
     if (next === this.current) return;
     next.reset().play().crossFadeFrom(this.current, seconds, false);

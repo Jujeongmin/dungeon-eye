@@ -2,28 +2,41 @@ import * as THREE from "three";
 import type { MonsterState } from "../match/types";
 import { ActionBlender, clipByName, ownMaterials, skinnedHeight } from "./skinned";
 
-const MONSTER_HEIGHT = 1.8;
 const HIT_FLASH_SECONDS = 0.08;
 const FOLLOW_RATE = 12;
+
+export interface MonsterLook { height: number; tint: number | null }
+const ZOMBIE_LOOK: MonsterLook = { height: 1.8, tint: null };
 
 export class MonsterActor {
   private readonly mixer: THREE.AnimationMixer;
   private readonly idle: THREE.AnimationAction;
   private readonly walk: THREE.AnimationAction;
+  private readonly attack: THREE.AnimationAction;
   private readonly death: THREE.AnimationAction;
   private readonly blender: ActionBlender;
   private readonly materials: THREE.MeshStandardMaterial[];
+  private readonly attackSeconds: number;
   private flashLeft = 0;
+  private attackLeft = 0;
   private lastHp: number | null = null;
+  private lastAttackReadyAt: number | null = null;
   private dead = false;
   private placed = false;
 
-  constructor(readonly id: string, readonly object: THREE.Object3D, clips: THREE.AnimationClip[]) {
-    object.scale.setScalar(MONSTER_HEIGHT / skinnedHeight(object));
+  constructor(readonly id: string, readonly object: THREE.Object3D, clips: THREE.AnimationClip[], look: MonsterLook = ZOMBIE_LOOK) {
+    object.scale.setScalar(look.height / skinnedHeight(object));
     this.materials = ownMaterials(object);
+    if (look.tint !== null) {
+      const tint = new THREE.Color(look.tint);
+      for (const m of this.materials) m.color.multiply(tint);
+    }
     this.mixer = new THREE.AnimationMixer(object);
     this.idle = this.mixer.clipAction(clipByName(clips, "Z_Idle"));
     this.walk = this.mixer.clipAction(clipByName(clips, "Z_Walk_InPlace"));
+    this.attack = this.mixer.clipAction(clipByName(clips, "Z_Attack"));
+    this.attack.setLoop(THREE.LoopOnce, 1);
+    this.attackSeconds = this.attack.getClip().duration;
     this.death = this.mixer.clipAction(clipByName(clips, "Z_FallingBack"));
     this.death.setLoop(THREE.LoopOnce, 1);
     this.death.clampWhenFinished = true;
@@ -46,10 +59,19 @@ export class MonsterActor {
 
     if (this.lastHp !== null && state.hp < this.lastHp) this.flashLeft = HIT_FLASH_SECONDS;
     this.lastHp = state.hp;
+    // Every attack pushes attackReadyAt forward, so a jump in it means the monster just swung.
+    if (this.lastAttackReadyAt !== null && state.attackReadyAt > this.lastAttackReadyAt && state.alive) {
+      this.attackLeft = this.attackSeconds;
+      if (this.blender.active === this.attack) this.attack.reset().play();
+      else this.blender.fadeTo(this.attack, 0.08);
+    }
+    this.lastAttackReadyAt = state.attackReadyAt;
+    this.attackLeft = Math.max(0, this.attackLeft - dt);
+
     if (!state.alive && !this.dead) {
       this.dead = true;
       this.blender.fadeTo(this.death, 0.1);
-    } else if (!this.dead) {
+    } else if (!this.dead && this.attackLeft === 0) {
       this.blender.fadeTo(Math.hypot(dx, dz) > 0.03 ? this.walk : this.idle);
     }
 

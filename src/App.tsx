@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGameServer } from "@agent8/gameserver";
 import type { Pose } from "./game/match/types";
-import { LEVEL_1, TILE_SIZE, parseLevel } from "./game/rules/levelLayout";
+import { RUINS, TILE_SIZE, parseLevel } from "./game/rules/levelLayout";
 import { HostDirector } from "./net/hostDirector";
 import { MatchClient } from "./net/matchClient";
 import { PracticeSession } from "./net/practice";
@@ -11,7 +11,7 @@ import { TitleScreen } from "./ui/TitleScreen";
 
 type Mode = "title" | "practice" | "online";
 
-const layout = parseLevel(LEVEL_1, TILE_SIZE);
+const layout = parseLevel(RUINS, TILE_SIZE);
 const ONLINE_AVAILABLE = Boolean(import.meta.env.VITE_AGENT8_VERSE);
 
 export default function App() {

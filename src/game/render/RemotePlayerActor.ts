@@ -40,18 +40,34 @@ export class RemotePlayerActor {
   readonly object: THREE.Object3D;
   private readonly body: THREE.Object3D;
   private readonly animated: Animated | null;
+  private readonly revealMark: THREE.Mesh;
+  private readonly boundMark: THREE.Mesh;
   private placed = false;
   private dead = false;
 
   constructor(readonly account: string, model: PlayerModel | null) {
     this.body = model?.object ?? placeholderBody();
     this.object = new THREE.Group();
-    this.object.add(this.body);
+    this.revealMark = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.35, 12), new THREE.MeshBasicMaterial({ color: 0xff3b2f }));
+    this.revealMark.rotation.x = Math.PI;
+    this.revealMark.position.y = 2.25;
+    this.revealMark.visible = false;
+    this.boundMark = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: 0xffb35a }));
+    this.boundMark.rotation.x = Math.PI / 2;
+    this.boundMark.position.y = 1.0;
+    this.boundMark.visible = false;
+    this.object.add(this.body, this.revealMark, this.boundMark);
     this.animated = model ? RemotePlayerActor.animate(model) : null;
     this.object.traverse((o) => {
       o.frustumCulled = false;
     });
     this.object.visible = false;
+  }
+
+  // A red marker over an exposed traitor, a rope ring around a bound player.
+  mark(revealed: boolean, bound: boolean): void {
+    this.revealMark.visible = revealed && !this.dead;
+    this.boundMark.visible = bound && !this.dead;
   }
 
   private static animate({ object, clips }: PlayerModel): Animated {
