@@ -3,6 +3,7 @@ import type { MoveInput } from "../rules/movement";
 export class FpsInput {
   firing = false;
   private readonly keys = new Set<string>();
+  private readonly pressed = new Set<string>();
   private lookX = 0;
   private lookY = 0;
 
@@ -32,6 +33,12 @@ export class FpsInput {
     return look;
   }
 
+  consumePress(code: string): boolean {
+    const had = this.pressed.has(code);
+    this.pressed.delete(code);
+    return had;
+  }
+
   dispose(): void {
     this.element.removeEventListener("click", this.onClick);
     this.element.removeEventListener("mousedown", this.onMouseDown);
@@ -55,12 +62,14 @@ export class FpsInput {
   };
   private onKeyDown = (e: KeyboardEvent) => {
     this.keys.add(e.code);
+    if (!e.repeat) this.pressed.add(e.code);
   };
   private onKeyUp = (e: KeyboardEvent) => {
     this.keys.delete(e.code);
   };
   private onBlur = () => {
     this.keys.clear();
+    this.pressed.clear();
     this.firing = false;
   };
   private onMouseMove = (e: MouseEvent) => {

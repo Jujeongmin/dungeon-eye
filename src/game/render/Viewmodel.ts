@@ -28,6 +28,10 @@ export class Viewmodel {
     camera.add(this.root);
   }
 
+  setVisible(visible: boolean): void {
+    this.root.visible = visible;
+  }
+
   fire(): void {
     this.kick = 1;
     this.flashLeft = 0.05;
