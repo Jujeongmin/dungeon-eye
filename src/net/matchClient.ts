@@ -1,7 +1,7 @@
 import { PROTOCOL_VERSION } from "../game/match/constants";
 import type { MonsterPoseUpdate } from "../game/match/damage";
 import { isActive } from "../game/match/lifecycle";
-import { RULE_ERRORS, type Pose, type PublicMatch } from "../game/match/types";
+import { RULE_ERRORS, type Pose, type PublicMatch, type Stage } from "../game/match/types";
 import type { PrivateView } from "../game/match/view";
 import type { MatchTransport, RoomUser } from "./transport";
 
@@ -168,6 +168,14 @@ export class MatchClient {
     return this.act("attackWithMonster", [monsterId, target]);
   }
 
+  interact(): Promise<string | null> {
+    return this.act("interact", []);
+  }
+
+  setStage(stage: Stage): Promise<string | null> {
+    return this.act("devSetStage", [stage]);
+  }
+
   escape(): Promise<string | null> {
     return this.act("escape", []);
   }
@@ -234,7 +242,10 @@ export class MatchClient {
     const match = state.match as PublicMatch | undefined;
     if (!match || match.version !== 1) return;
     this.set({ match: this.keepOwnMonsters(match), phase: match.phase });
-    if (match.phase === "playing" && this.current.you.role === null && !this.refreshing) {
+    // Ticks cannot message players, so a possession ended by a vote shows up only here.
+    const held = this.current.you.possession;
+    const lost = held !== null && match.monsters[held.monsterId]?.possessed !== true;
+    if (match.phase === "playing" && (this.current.you.role === null || lost) && !this.refreshing) {
       this.refreshing = true;
       this.refresh()
         .catch((error) => this.fail(error))

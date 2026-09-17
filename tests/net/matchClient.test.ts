@@ -149,4 +149,39 @@ describe("MatchClient", () => {
     expect(client.state.phase).toBe("error");
     expect(client.state.error).toContain("protocol");
   });
+
+  it("uses what is nearby and can skip stages in test rooms", async () => {
+    const world = new LocalWorld(new Server());
+    const [a] = await joinAll(world);
+    a.reportPose({ x: 6, z: 6, yaw: 0 });
+    await settle(world);
+    expect(await a.interact()).toBe("nothing_here");
+    expect(await a.setStage("exit")).toBeNull();
+    await settle(world);
+    expect(a.state.match!.objectives.stage).toBe("exit");
+  });
+
+  it("notices when a tick ends its possession", async () => {
+    const world = new LocalWorld(new Server());
+    const clients = await joinAll(world);
+    const traitor = clients.find((c) => c.state.you.role === "traitor")!;
+    await traitor.advanceClock(60_000);
+    traitor.reportPose({ x: 30, z: 14, yaw: 0 });
+    await settle(world);
+    expect(await traitor.possess("zombie-0")).toBeNull();
+    expect(traitor.state.you.possession).not.toBeNull();
+
+    const voters = clients.filter((c) => c !== traitor).slice(0, 2);
+    const plate = [{ x: 10, z: 10 }, { x: 18, z: 10 }, { x: 10, z: 18 }, { x: 18, z: 18 }][
+      traitor.state.match!.players.indexOf(traitor.account)
+    ];
+    for (const v of voters) v.reportPose({ x: plate.x, z: plate.z, yaw: 0 });
+    await settle(world);
+    await world.tickAll();
+    await voters[0].advanceClock(5000);
+    await world.tickAll();
+    await settle(world);
+    expect(traitor.state.match!.revealed).toBe(traitor.account);
+    expect(traitor.state.you.possession).toBeNull();
+  });
 });

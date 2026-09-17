@@ -1,6 +1,6 @@
 import { stepMonsterAi } from "../game/match/monsterAi";
 import type { Pose, Poses } from "../game/match/types";
-import { solidAt, type LevelLayout } from "../game/rules/levelLayout";
+import { solidWith, type LevelLayout } from "../game/rules/levelLayout";
 import type { MatchClient } from "./matchClient";
 
 export class HostDirector {
@@ -16,7 +16,8 @@ export class HostDirector {
     if (phase !== "playing" || !match || this.client.host() !== this.client.account) return;
     const all: Poses = { ...poses };
     if (ownPose) all[this.client.account] = ownPose;
-    const step = stepMonsterAi(match, all, (x, z) => solidAt(this.layout, x, z), dt, this.client.serverNow(), () => false);
+    const isSolid = solidWith(this.layout, match.objectives.gates);
+    const step = stepMonsterAi(match, all, isSolid, dt, this.client.serverNow(), () => false);
     this.client.reportMonsters(step.updates);
     const order = step.attacks[0];
     if (order && !this.attacking) {

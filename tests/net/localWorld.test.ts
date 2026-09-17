@@ -108,7 +108,7 @@ describe("LocalWorld", () => {
     const roomId = await fill(world);
     await world.tickAll();
     expect(world.roomState(roomId).match.phase).toBe("playing");
-    vi.setSystemTime(1_000_000 + 9 * 60_000);
+    vi.setSystemTime(1_000_000 + 21 * 60_000);
     await world.tickAll();
     expect(world.roomState(roomId).match.phase).toBe("ended");
   });
