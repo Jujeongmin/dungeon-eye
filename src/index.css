@@ -82,7 +82,7 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .brush-button:hover:not(:disabled)::after { background: rgba(255, 170, 80, 0.7); }
 .brush-button:disabled { opacity: 0.45; cursor: default; }
 
-/* A dark, ragged panel (Dark UI Kit brush shapes) with an ember brush outline. */
+/* A dark, ragged panel (Dark UI Kit brush shape). */
 .dark-panel { position: relative; isolation: isolate; padding: 60px 120px; }
 .dark-panel::before {
   content: "";
@@ -92,15 +92,6 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
   background: radial-gradient(ellipse at 50% 40%, rgba(40, 26, 16, 0.96), rgba(8, 6, 5, 0.96) 70%);
   -webkit-mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
   mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
-}
-.dark-panel::after {
-  content: "";
-  position: absolute;
-  inset: 14px 26px;
-  z-index: -1;
-  background: rgba(170, 110, 60, 0.28);
-  -webkit-mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
-  mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
 }
 
 .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--night); }
