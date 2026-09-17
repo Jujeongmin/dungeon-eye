@@ -95,3 +95,16 @@ export function solidAt(layout: LevelLayout, x: number, z: number): boolean {
   if (r < 0 || r >= layout.rows || c < 0 || c >= layout.cols) return true;
   return layout.solid[r][c];
 }
+
+const SPAWN_OFFSETS: Point2[] = [
+  { x: -0.8, z: -0.8 },
+  { x: 0.8, z: -0.8 },
+  { x: -0.8, z: 0.8 },
+  { x: 0.8, z: 0.8 },
+];
+
+export function spawnPoint(layout: LevelLayout, index: number): Point2 {
+  const n = SPAWN_OFFSETS.length;
+  const offset = SPAWN_OFFSETS[((index % n) + n) % n];
+  return { x: layout.playerSpawn.x + offset.x, z: layout.playerSpawn.z + offset.z };
+}

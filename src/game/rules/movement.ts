@@ -8,7 +8,9 @@ export interface MoveInput { forward: number; strafe: number }
 export interface PlayerPose { x: number; z: number; yaw: number }
 export type SolidTest = (x: number, z: number) => boolean;
 
-export function stepPlayer(pose: PlayerPose, input: MoveInput, dt: number, isSolid: SolidTest): PlayerPose {
+export function stepPlayer(
+  pose: PlayerPose, input: MoveInput, dt: number, isSolid: SolidTest, speed: number = WALK_SPEED,
+): PlayerPose {
   const step = Math.min(Math.max(dt, 0), MAX_STEP_SECONDS);
   const sin = Math.sin(pose.yaw);
   const cos = Math.cos(pose.yaw);
@@ -17,7 +19,7 @@ export function stepPlayer(pose: PlayerPose, input: MoveInput, dt: number, isSol
   const len = Math.hypot(mx, mz);
   if (len === 0 || step === 0) return pose;
 
-  const scale = (WALK_SPEED * step * Math.min(1, len)) / len;
+  const scale = (speed * step * Math.min(1, len)) / len;
   mx *= scale;
   mz *= scale;
 

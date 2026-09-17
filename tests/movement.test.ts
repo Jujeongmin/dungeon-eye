@@ -45,6 +45,11 @@ describe("stepPlayer", () => {
     expect(next.z).toBeLessThan(10 - 0.2);
   });
 
+  it("moves at a custom speed when one is given", () => {
+    const next = stepPlayer({ x: 10, z: 10, yaw: 0 }, { forward: 1, strafe: 0 }, 0.1, open, 2);
+    expect(10 - next.z).toBeCloseTo(0.2);
+  });
+
   it("stands still with no input", () => {
     const pose = { x: 1, z: 2, yaw: 3 };
     expect(stepPlayer(pose, { forward: 0, strafe: 0 }, 0.1, open)).toEqual(pose);
