@@ -3,7 +3,8 @@ import type { MatchDebugHandle } from "../game/render/MatchView";
 import { GRIP, type HandTurn } from "../game/render/RemotePlayerActor";
 
 // Development panel for fitting the held rifle to the hands. Open the game with ?tune in the address.
-const STORAGE_KEY = "traitor-hunt:grip";
+// Bumped when the defaults change, so old saved tuning does not hide them.
+const STORAGE_KEY = "traitor-hunt:grip:v2";
 const DEFAULTS = JSON.stringify(GRIP);
 
 type Grip = typeof GRIP;

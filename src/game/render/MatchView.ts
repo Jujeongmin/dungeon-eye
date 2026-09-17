@@ -11,11 +11,12 @@ import type { MatchResult, MonsterKind, PlayerResult, Pose, Possession, PublicMa
 import { distance } from "../match/view";
 import { tallyPlates, votesNeeded } from "../match/vote";
 import { ZOMBIE_HEIGHT, ZOMBIE_RADIUS, resolveShot, type HitTarget, type Ray3 } from "../rules/combat";
+import { DRESSING_MODELS, dressLevel, type Dressed } from "../rules/dressing";
 import { RUINS, TILE_SIZE, parseLevel, solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
 import { EYE_HEIGHT, applyLook, stepPlayer, type SolidTest } from "../rules/movement";
 import { FpsInput } from "./FpsInput";
 import { MonsterActor, type MonsterLook } from "./MonsterActor";
-import { ObjectiveProps } from "./ObjectiveProps";
+import { OBJECTIVE_MODELS, ObjectiveProps } from "./ObjectiveProps";
 import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
 import { Viewmodel } from "./Viewmodel";
 import { costumeForSeat } from "./costumes";
@@ -29,12 +30,15 @@ export const LOOK_SENSITIVITY = 0.0022;
 export const KIT = { wallYawOffset: Math.PI / 2, wallInset: 0, ceilingYOffset: 0 };
 
 const KIT_MODELS = ["dd_floor_a", "dd_ceiling", "dd_wall_a", "dd_pillar_a", "dd_torch", "dd_barrel", "chest_closed"];
-export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1", "explorer"];
+export const MATCH_MODELS = [
+  ...new Set([...KIT_MODELS, ...DRESSING_MODELS, ...OBJECTIVE_MODELS, "wpn_akm", "zombie1", "explorer"]),
+];
 
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED_FACTOR = 1.3;
 const HUD_INTERVAL_MS = 100;
 const SHAKE_MS = 350;
+const HANG_CLEARANCE = 2.3;
 const SHAKE_SIZE = 0.06;
 // The boss is the zombie model, grown and reddened, until it gets its own model.
 const BOSS_LOOK: MonsterLook = { height: 3, tint: 0xd07a7a };
@@ -43,9 +47,9 @@ const HIT_SHAPE: Record<MonsterKind, { radius: number; height: number }> = {
   boss: { radius: 0.8, height: 3 },
 };
 const INTERACT_LABEL: Record<Interactable["kind"], string> = {
-  shard: "E: 룬 조각 줍기",
-  gate: "E: 룬 조각 끼우기",
-  device: "E: 장치 작동",
+  shard: "E: 열쇠 줍기",
+  gate: "E: 열쇠로 철문 열기",
+  device: "E: 촛대에 불 켜기",
   altar: "E: 봉인 해제 시작",
 };
 
@@ -130,6 +134,7 @@ export class MatchView {
   private readonly input: FpsInput;
   private readonly resizeObserver: ResizeObserver;
   private readonly torches: THREE.PointLight[] = [];
+  private dressing: Dressed[] = [];
   private readonly monsters = new Map<string, MonsterActor>();
   private readonly players = new Map<string, RemotePlayerActor>();
   private readonly hudListeners = new Set<(hud: HudState) => void>();
@@ -179,10 +184,10 @@ export class MatchView {
     // React StrictMode mounts twice; the first view may be gone by now.
     if (this.disposed) return;
     this.library = library;
-    this.buildLevel(library);
+    const kitScale = this.buildLevel(library);
     this.addLights();
-    this.addExitMarker();
-    this.props = new ObjectiveProps(this.scene, this.layout);
+    this.addExitMarker(library, kitScale);
+    this.props = new ObjectiveProps(this.scene, this.layout, library, kitScale);
     this.props.onLand = () => {
       this.shakeUntil = performance.now() + SHAKE_MS;
       playThud();
@@ -562,15 +567,17 @@ export class MatchView {
     };
   }
 
-  private buildLevel(library: ModelLibrary): void {
+  // Builds the kit level with its set dressing and returns the kit's scale.
+  private buildLevel(library: ModelLibrary): number {
     const floorSize = new THREE.Box3().setFromObject(library.get("dd_floor_a").scene).getSize(new THREE.Vector3());
     const kitScale = TILE_SIZE / Math.max(floorSize.x, floorSize.z);
-    for (const p of this.layout.placements) {
+    this.dressing = dressLevel(this.layout);
+    for (const p of this.dressing) {
       const obj = library.instance(p.model);
       obj.scale.setScalar(kitScale);
       let { x, y, z } = p;
       let yaw = p.rotationY;
-      if (p.model === "dd_wall_a") {
+      if (p.model.startsWith("dd_wall_")) {
         x += Math.sin(p.rotationY) * KIT.wallInset;
         z += Math.cos(p.rotationY) * KIT.wallInset;
         yaw += KIT.wallYawOffset;
@@ -578,16 +585,24 @@ export class MatchView {
       if (p.model === "dd_ceiling") y += KIT.ceilingYOffset;
       obj.position.set(x, y, z);
       obj.rotation.y = yaw;
+      if (p.hang) {
+        // Top against the ceiling, but never lower than head height so players pass beneath.
+        obj.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(obj);
+        obj.position.y += Math.max(TILE_SIZE - box.max.y, HANG_CLEARANCE - box.min.y);
+      }
       this.scene.add(obj);
     }
+    return kitScale;
   }
 
   private addLights(): void {
     this.scene.add(new THREE.HemisphereLight(0x8a8298, 0x2a2018, 0.9));
-    for (const p of this.layout.placements) {
+    for (const p of this.dressing) {
       if (p.model !== "dd_torch") continue;
       const light = new THREE.PointLight(0xff8a3d, 25, 12, 2);
-      light.position.set(p.x, p.y + 0.4, p.z);
+      // Wall torches sit on a wall face; nudge their light a little further into the room.
+      light.position.set(p.x + Math.sin(p.rotationY) * 0.3, p.y + 0.4, p.z + Math.cos(p.rotationY) * 0.3);
       this.scene.add(light);
       this.torches.push(light);
     }
@@ -597,17 +612,17 @@ export class MatchView {
     this.camera.add(lamp, lamp.target);
   }
 
-  private addExitMarker(): void {
+  // The way out is a floor hatch with a pale green glow.
+  private addExitMarker(library: ModelLibrary, kitScale: number): void {
     for (const exit of this.layout.exits) {
-      const ring = new THREE.Mesh(
-        new THREE.RingGeometry(EXIT_RADIUS - 0.25, EXIT_RADIUS, 48),
-        new THREE.MeshBasicMaterial({ color: 0x4dff9a, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
-      );
-      ring.rotation.x = -Math.PI / 2;
-      ring.position.set(exit.x, 0.03, exit.z);
+      const hatch = library.instance("dd_floor_gate");
+      hatch.scale.setScalar(kitScale * 0.8);
+      hatch.updateMatrixWorld(true);
+      const centre = new THREE.Box3().setFromObject(hatch).getCenter(new THREE.Vector3());
+      hatch.position.set(exit.x - centre.x, 0.02, exit.z - centre.z);
       const light = new THREE.PointLight(0x4dff9a, 12, 8, 2);
       light.position.set(exit.x, 1.2, exit.z);
-      this.scene.add(ring, light);
+      this.scene.add(hatch, light);
     }
   }
 

@@ -119,11 +119,6 @@
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_B.prefab"
     },
     {
-      "name": "dd_floor_c",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_C.prefab"
-    },
-    {
       "name": "dd_floor_gate",
       "kind": "prefab",
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Floor_Gate.prefab"
@@ -162,31 +157,6 @@
       "name": "dd_hanging_cage",
       "kind": "prefab",
       "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Hanging_Cage.prefab"
-    },
-    {
-      "name": "dd_pillar_b",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Pillars/Pillar_B.prefab"
-    },
-    {
-      "name": "dd_pillar_d",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Pillars/Pillar_D.prefab"
-    },
-    {
-      "name": "dd_door_a",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Doors/Door_A.prefab"
-    },
-    {
-      "name": "dd_cell_seat",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Cell_Seat.prefab"
-    },
-    {
-      "name": "dd_grunge_a",
-      "kind": "prefab",
-      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Decals/Grunge_A.prefab"
     }
   ]
 }

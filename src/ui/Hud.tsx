@@ -19,7 +19,7 @@ const ERROR_LABEL: Record<string, string> = {
   not_traitor: "배신자만 할 수 있어요",
   match_full: "방이 가득 찼어요",
   nothing_here: "여기엔 쓸 수 있는 게 없어요",
-  need_shards: "룬 조각 2개가 모두 있어야 해요",
+  need_shards: "열쇠 2개가 모두 있어야 해요",
   exit_locked: "아직 출구가 봉인돼 있어요",
   sealed: "정체가 드러나 빙의가 봉인됐어요",
   bound: "묶여 있어서 할 수 없어요",
@@ -41,9 +41,9 @@ function seconds(ms: number): number {
 function objectiveText(o: ObjectiveHud): string {
   switch (o.stage) {
     case "shards":
-      return o.shards < o.shardTotal ? `룬 조각 찾기 ${o.shards}/${o.shardTotal}` : "봉인문 1에 룬 조각 끼우기";
+      return o.shards < o.shardTotal ? `열쇠 찾기 ${o.shards}/${o.shardTotal}` : "철문으로 가서 열쇠로 열기";
     case "devices":
-      return `고대 장치 ${o.devicesOn}/${o.deviceTotal} 켜짐 — 둘을 동시에 켜야 문이 열린다`;
+      return `의식 촛대 ${o.devicesOn}/${o.deviceTotal} 켜짐 — 둘을 동시에 켜야 문이 열린다`;
     case "seal":
       if (!o.sealStarted) return "제단에서 봉인 해제 시작";
       return `봉인 해제 ${seconds(o.sealMs)}/${seconds(o.sealTotalMs)}초${o.guarded ? "" : " — 제단 곁을 지키세요!"}`;

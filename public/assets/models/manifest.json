@@ -40,11 +40,6 @@
       "bytes": 347232,
       "animations": []
     },
-    "dd_cell_seat": {
-      "url": "assets/models/dd_cell_seat.glb",
-      "bytes": 1206272,
-      "animations": []
-    },
     "dd_chain_a": {
       "url": "assets/models/dd_chain_a.glb",
       "bytes": 638496,
@@ -60,11 +55,6 @@
       "bytes": 798044,
       "animations": []
     },
-    "dd_door_a": {
-      "url": "assets/models/dd_door_a.glb",
-      "bytes": 638808,
-      "animations": []
-    },
     "dd_floor_a": {
       "url": "assets/models/dd_floor_a.glb",
       "bytes": 347276,
@@ -75,19 +65,9 @@
       "bytes": 405376,
       "animations": []
     },
-    "dd_floor_c": {
-      "url": "assets/models/dd_floor_c.glb",
-      "bytes": 348184,
-      "animations": []
-    },
     "dd_floor_gate": {
       "url": "assets/models/dd_floor_gate.glb",
       "bytes": 600848,
-      "animations": []
-    },
-    "dd_grunge_a": {
-      "url": "assets/models/dd_grunge_a.glb",
-      "bytes": 557488,
       "animations": []
     },
     "dd_hanging_cage": {
@@ -103,16 +83,6 @@
     "dd_pillar_a": {
       "url": "assets/models/dd_pillar_a.glb",
       "bytes": 313576,
-      "animations": []
-    },
-    "dd_pillar_b": {
-      "url": "assets/models/dd_pillar_b.glb",
-      "bytes": 635040,
-      "animations": []
-    },
-    "dd_pillar_d": {
-      "url": "assets/models/dd_pillar_d.glb",
-      "bytes": 315012,
       "animations": []
     },
     "dd_table_a": {

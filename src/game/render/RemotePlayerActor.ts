@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Pose } from "../match/types";
 import { reachWithArm, setWorldRotation } from "./armIk";
 import { isCostumePart, type Costume } from "./costumes";
+import { createLabel, setLabel } from "./labels";
 import { withUpperBodyPose } from "./playerAnimation";
 import { ActionBlender, clipByName, skinnedHeight } from "./skinned";
 
@@ -15,17 +16,17 @@ export interface HandTurn { on: boolean; x: number; y: number; z: number }
 // How the rifle is held. Mutable so the development tuner can adjust it live.
 export const GRIP = {
   // Where the stock sits relative to the chest bone, in body space (the model faces +z, its right is -x).
-  stock: { x: -0.13, y: 0.08, z: 0.06 },
+  stock: { x: -0.12, y: 0.07, z: 0.05 },
   // Where the hands hold it, as fractions of its length from the stock.
-  trigger: 0.34,
-  barrel: 0.64,
+  trigger: 0.16,
+  barrel: 0.63,
   // Each hand's shift from the rifle's centre line, in metres: side (+ = body's left) and up.
-  rightShift: { side: 0, up: -0.04 },
-  leftShift: { side: 0, up: -0.04 },
+  rightShift: { side: -0.05, up: -0.05 },
+  leftShift: { side: 0.06, up: -0.03 },
   // How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
-  neckKeep: 0.2,
+  neckKeep: 0.1,
   // Optional hand rotation in the rifle's space, in degrees; off keeps the animation's hand rotation.
-  rightHand: { on: false, x: 0, y: 0, z: 0 } as HandTurn,
+  rightHand: { on: false, x: -30, y: 0, z: -5 } as HandTurn,
   leftHand: { on: false, x: 0, y: 0, z: 0 } as HandTurn,
 };
 
@@ -96,8 +97,8 @@ export class RemotePlayerActor {
   readonly object: THREE.Object3D;
   private readonly body: THREE.Object3D;
   private readonly animated: Animated | null;
-  private readonly revealMark: THREE.Mesh;
-  private readonly boundMark: THREE.Mesh;
+  private readonly tag = createLabel(1.8);
+  private tagText = "";
   private readonly weapon: THREE.Object3D | null;
   private readonly rig: Rig | null;
   private readonly rifleBox = new THREE.Box3();
@@ -111,15 +112,8 @@ export class RemotePlayerActor {
   constructor(readonly account: string, model: PlayerModel | null) {
     this.body = model?.object ?? placeholderBody();
     this.object = new THREE.Group();
-    this.revealMark = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.35, 12), new THREE.MeshBasicMaterial({ color: 0xff3b2f }));
-    this.revealMark.rotation.x = Math.PI;
-    this.revealMark.position.y = 2.25;
-    this.revealMark.visible = false;
-    this.boundMark = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 24), new THREE.MeshBasicMaterial({ color: 0xffb35a }));
-    this.boundMark.rotation.x = Math.PI / 2;
-    this.boundMark.position.y = 1.0;
-    this.boundMark.visible = false;
-    this.object.add(this.body, this.revealMark, this.boundMark);
+    this.tag.position.y = 2.2;
+    this.object.add(this.body, this.tag);
     // Rest rotations are read before any clip plays.
     this.rig = model ? findRig(model.object) : null;
     this.animated = model ? RemotePlayerActor.animate(model) : null;
@@ -134,10 +128,12 @@ export class RemotePlayerActor {
     this.object.visible = false;
   }
 
-  // A red marker over an exposed traitor, a rope ring around a bound player.
+  // A tag over an exposed traitor or a bound player.
   mark(revealed: boolean, bound: boolean): void {
-    this.revealMark.visible = revealed && !this.dead;
-    this.boundMark.visible = bound && !this.dead;
+    const text = this.dead ? "" : revealed ? "배신자" : bound ? "묶임" : "";
+    if (text === this.tagText) return;
+    this.tagText = text;
+    setLabel(this.tag, text, revealed ? "#ff6b5a" : "#ffb35a");
   }
 
   private static animate({ object, clips, costume }: PlayerModel): Animated {
