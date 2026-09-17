@@ -1,10 +1,10 @@
 import { PLAYERS, actAs, errorOf, fillRoom, findTraitor, roomMatch } from "./helpers";
 
-const EIGHT_MINUTES = 8 * 60_000;
+const MATCH_TIME = 20 * 60_000;
 
 describe("matchmaking", () => {
   test("reports the protocol version", async (server) => {
-    expect(await server.getServerVersion()).toEqual({ protocol: 1 });
+    expect(await server.getServerVersion()).toEqual({ protocol: 2 });
   });
 
   test("fills one room with four players and starts with exactly one hidden traitor", async (server) => {
@@ -71,7 +71,7 @@ describe("ending", () => {
     const roomId = await fillRoom(server);
     const traitor = await findTraitor(server, roomId);
     actAs(server, PLAYERS[0], roomId);
-    await server.devAdvanceClock(EIGHT_MINUTES);
+    await server.devAdvanceClock(MATCH_TIME);
     await server.syncMatch();
     const snapshot = await server.getMatchState();
     expect(snapshot.match.phase).toBe("ended");
@@ -89,7 +89,7 @@ describe("ending", () => {
     await server.$roomTick(500, roomId);
     expect((await roomMatch(roomId)).phase).toBe("playing");
     const match = await roomMatch(roomId);
-    match.devClockOffsetMs = EIGHT_MINUTES;
+    match.devClockOffsetMs = MATCH_TIME;
     await $global.updateRoomState(roomId, { match });
     await server.$roomTick(500, roomId);
     const ended = await roomMatch(roomId);

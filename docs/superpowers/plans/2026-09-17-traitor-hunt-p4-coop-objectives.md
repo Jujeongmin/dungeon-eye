@@ -1414,7 +1414,7 @@ describe("$roomTick", () => {
 });
 ```
 
-`server/test/match.test.ts`: `const EIGHT_MINUTES = 8 * 60_000;`를 `const MATCH_TIME = 20 * 60_000;`로 바꾸고, 파일 안의 `EIGHT_MINUTES`를 모두 `MATCH_TIME`으로 바꾼다.
+`server/test/match.test.ts`: `const EIGHT_MINUTES = 8 * 60_000;`를 `const MATCH_TIME = 20 * 60_000;`로 바꾸고, 파일 안의 `EIGHT_MINUTES`를 모두 `MATCH_TIME`으로 바꾼다. 같은 파일의 `toEqual({ protocol: 1 })`는 `toEqual({ protocol: 2 })`로 바꾼다.
 
 `server/test/actions.test.ts`의 `"adventurers win when every living adventurer is out, and everyone is told"` 테스트에서:
 - `for (const a of adventurers) spots[a] = { x: 38, z: 26 };`를 `for (const a of adventurers) spots[a] = { x: 54, z: 46 };`로 바꾼다.

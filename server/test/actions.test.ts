@@ -143,8 +143,10 @@ describe("escape", () => {
     const traitor = await findTraitor(server, roomId);
     const adventurers = PLAYERS.filter((p) => p !== traitor);
     const spots: Record<string, { x: number; z: number }> = {};
-    for (const a of adventurers) spots[a] = { x: 38, z: 26 };
+    for (const a of adventurers) spots[a] = { x: 54, z: 46 };
     await placeAll(server, roomId, spots);
+    actAs(server, adventurers[0], roomId);
+    await server.devSetStage("exit");
 
     const messages = captureMessages();
     try {

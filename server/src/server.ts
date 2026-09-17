@@ -3,17 +3,21 @@ import {
   applyMonsterPoses, monsterAttack, reachExit, shootMonster, type MonsterPoseUpdate,
 } from "../../src/game/match/damage";
 import { createLobby, joinLobby, leaveLobby, monsterSpawnsFor, startMatch } from "../../src/game/match/lifecycle";
+import { advanceObjectives, operateObjective, skipToStage } from "../../src/game/match/objectives";
 import { markLeft, resolveOutcome, settleResults } from "../../src/game/match/outcome";
 import { releasePossession, startPossession } from "../../src/game/match/possession";
-import { RuleViolation, type MatchEvent, type PublicMatch, type SecretMatch } from "../../src/game/match/types";
+import {
+  RuleViolation, STAGES, type MatchEvent, type PublicMatch, type SecretMatch, type Stage,
+} from "../../src/game/match/types";
 import { privateView, type PrivateView } from "../../src/game/match/view";
-import { LEVEL_1, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
+import { stepVote } from "../../src/game/match/vote";
+import { RUINS, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
 import {
   createSecret, deleteSecret, isPose, listLobbies, newRoomId, readMatch, readPose, readPoses, readSecret,
   saveResults, withMatchmakingLock, withRoomLock, writeMatch, writePose, writeSecret,
 } from "./store";
 
-const LEVEL = parseLevel(LEVEL_1, TILE_SIZE);
+const LEVEL = parseLevel(RUINS, TILE_SIZE);
 const SPAWNS = monsterSpawnsFor(LEVEL);
 
 interface RoomContext {
@@ -52,6 +56,10 @@ function requireLive(ctx: RoomContext): SecretMatch {
   return ctx.secret;
 }
 
+function requireTestAccount(): void {
+  if (!$sender.account.startsWith("test-")) throw new RuleViolation("unavailable");
+}
+
 // Every in-room request: lock, load, apply rules, settle the clock, save, then notify.
 async function inRoom<T>(work: (ctx: RoomContext) => T | Promise<T>): Promise<T> {
   const roomId = currentRoom();
@@ -62,6 +70,7 @@ async function inRoom<T>(work: (ctx: RoomContext) => T | Promise<T>): Promise<T>
       roomId, account: $sender.account, match, secret: await readSecret(match), now: clock(match), events: [],
     };
     const value = await work(ctx);
+    advanceObjectives(ctx.match, null, LEVEL, ctx.now);
     ctx.events.push(...resolveOutcome(ctx.match, ctx.secret, ctx.now));
     await commit(ctx);
     notify(ctx);
@@ -152,13 +161,23 @@ export class Server {
   }
 
   async devAdvanceClock(ms: number): Promise<number> {
-    if (!$sender.account.startsWith("test-") || typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) {
-      throw new RuleViolation("unavailable");
-    }
+    requireTestAccount();
+    if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) throw new RuleViolation("unavailable");
     return inRoom((ctx) => {
       ctx.match.devClockOffsetMs += ms;
       ctx.now += ms;
       return ctx.now;
+    });
+  }
+
+  async devSetStage(stage: unknown): Promise<void> {
+    requireTestAccount();
+    if (typeof stage !== "string" || !(STAGES as readonly string[]).includes(stage)) {
+      throw new RuleViolation("unavailable");
+    }
+    await inRoom((ctx) => {
+      requireLive(ctx);
+      skipToStage(ctx.match, LEVEL, stage as Stage, ctx.now);
     });
   }
 
@@ -214,6 +233,14 @@ export class Server {
     });
   }
 
+  async interact(): Promise<void> {
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const pose = await readPose(ctx.roomId, ctx.account);
+      operateObjective(ctx.match, secret, ctx.account, pose, LEVEL, ctx.now);
+    });
+  }
+
   async escape(): Promise<void> {
     await inRoom(async (ctx) => {
       const secret = requireLive(ctx);
@@ -222,18 +249,24 @@ export class Server {
     });
   }
 
-  // Platform hook (every 200-1000 ms per active room). Only the deadline needs it:
-  // everything else is settled by the next request. The cheap unlocked read keeps idle ticks light.
+  // Platform hook (every 200-1000 ms per active room). Drives the clock-based rules:
+  // plate votes, the seal channel and the deadline. Saves only when something changed.
   async $roomTick(_deltaMillis: number, roomId: string): Promise<void> {
     const peek = await readMatch(roomId);
-    if (!peek || peek.phase !== "playing" || peek.endsAt === null || clock(peek) < peek.endsAt) return;
+    if (!peek || peek.phase !== "playing") return;
     await withRoomLock(roomId, async () => {
       const match = await readMatch(roomId);
-      if (!match) return;
-      const ctx: RoomContext = { roomId, account: "", match, secret: await readSecret(match), now: clock(match), events: [] };
-      ctx.events.push(...resolveOutcome(match, ctx.secret, ctx.now));
-      // No $room outside a request: clients see the end through the room state.
-      if (ctx.events.length > 0) await commit(ctx);
+      const secret = match ? await readSecret(match) : null;
+      if (!match || !secret || match.phase !== "playing") return;
+      const before = JSON.stringify([match, secret]);
+      const now = clock(match);
+      const ctx: RoomContext = { roomId, account: "", match, secret, now, events: [] };
+      const poses = await readPoses(roomId, match.players);
+      ctx.events.push(...stepVote(match, secret, poses, LEVEL.plates, now));
+      advanceObjectives(match, poses, LEVEL, now);
+      ctx.events.push(...resolveOutcome(match, secret, now));
+      // No $room outside a request: clients see the changes through the room state.
+      if (JSON.stringify([match, secret]) !== before) await commit(ctx);
     });
   }
 }
