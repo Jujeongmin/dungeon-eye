@@ -1,0 +1,32 @@
+# Dungeon Eye
+
+4인 협동 3D FPS 던전 탈출 게임. 네 명 중 한 명은 몰래 정해진 배신자이고, 멀리 있는 몬스터에 빙의해 팀을 방해할 수 있다.
+빙의한 몬스터가 입는 피해는 배신자 본인의 몸에도 전해진다. Verse8 배포 대상, Vite + React + TypeScript + Three.js.
+
+- 기획: [docs/superpowers/specs/2026-09-17-dungeon-eye-design.md](docs/superpowers/specs/2026-09-17-dungeon-eye-design.md)
+- 구현 계획: [docs/superpowers/plans/](docs/superpowers/plans/)
+- 에셋 출처와 라이선스: [docs/licenses/asset-provenance.md](docs/licenses/asset-provenance.md)
+
+## 현재 상태
+
+Plan 1 완료: 혼자 던전 방을 1인칭으로 걸어다니며 AKM으로 좀비를 쏠 수 있다. 배신자 규칙과 멀티플레이는 Plan 2~4.
+
+## 3D 모델은 이 저장소에 없다
+
+게임이 쓰는 모델은 Unity Asset Store 무료 에셋을 변환한 것이고, 에셋 약관이 에셋 파일을 따로 배포하는 것을 금지한다.
+그래서 `public/assets/models/*.glb`는 저장소에서 제외되어 있고 목록(`manifest.json`)만 있다. 모델을 만들려면:
+
+1. Unity Asset Store에서 [에셋 목록](docs/licenses/asset-provenance.md)의 에셋을 직접 받아 Unity 프로젝트(`../My project`)에 가져온다.
+2. Unity 에디터에서 그 프로젝트를 닫고 `npm run export-glb` (Unity 6000.5.2f1 필요, 결과는 `art-src/_glb`).
+3. `npm run models` (결과는 `public/assets/models`).
+
+## 실행
+
+```bash
+npm install
+npm run dev
+```
+
+```bash
+npm test
+```
