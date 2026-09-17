@@ -1,4 +1,18 @@
-html, body { margin: 0; height: 100%; background: #000; color: #e8e2d6; font-family: system-ui, sans-serif; }
+:root {
+  --ink: #f2e8d5;
+  --ink-dim: #b9ad99;
+  --ember: #ffb35a;
+  --blood: #ff6b5a;
+  --frost: #9fd6ff;
+  --night: #0b0a09;
+  --band: rgba(9, 7, 6, 0.8);
+  --font-body: "Noto Serif KR", serif;
+  --font-head: "Hahmlet", "Noto Serif KR", serif;
+  --font-logo: "Cinzel", "Hahmlet", serif;
+  --shadow: 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, 0.9);
+}
+
+html, body { margin: 0; height: 100%; background: #000; color: var(--ink); font-family: var(--font-body); }
 body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
 /* The game is a fixed 16:9 landscape stage; leftover window space shows as black bars. */
 #root {
@@ -7,48 +21,235 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
   height: min(100vh, calc(100vw * 9 / 16));
   width: min(100vw, calc(100dvh * 16 / 9));
   height: min(100dvh, calc(100vw * 9 / 16));
-  background: #0b0a09;
+  background: var(--night);
   overflow: hidden;
 }
 .app { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .app canvas { display: block; width: 100%; height: 100%; }
-.hint { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); font-size: 13px; opacity: 0.7; pointer-events: none; }
-.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #0b0a09; }
-.overlay.error { color: #ff8a7a; }
-.crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #e8e2d6; border-radius: 50%; pointer-events: none; }
-.overlay.dim { background: rgba(8, 6, 6, 0.72); flex-direction: column; gap: 12px; }
-.overlay.title { flex-direction: column; gap: 16px; text-align: center; padding: 16px; }
-.overlay.title h1 { letter-spacing: 0.3em; font-weight: 600; margin: 0; }
-.overlay .buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.overlay button { font: inherit; padding: 10px 18px; border: 1px solid #6a5f55; background: #1b1714; color: #e8e2d6; cursor: pointer; }
-.overlay button:disabled { opacity: 0.4; cursor: default; }
-.overlay .note { font-size: 13px; opacity: 0.7; }
-.overlay.result h2 { margin: 0; letter-spacing: 0.1em; }
-.hud-top { position: absolute; left: 16px; top: 12px; display: flex; gap: 14px; align-items: center; pointer-events: none; }
-.role { padding: 2px 8px; border: 1px solid currentColor; }
-.role-traitor { color: #ff6b5a; }
-.role-adventurer { color: #8fd3ff; }
-.timer { font-variant-numeric: tabular-nums; }
-.hud-possess { position: absolute; right: 16px; top: 12px; color: #ff6b5a; pointer-events: none; }
-.hud-prompt { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); pointer-events: none; }
-.hud-error { position: absolute; left: 50%; top: 69%; transform: translateX(-50%); color: #ffb35a; pointer-events: none; }
-.pain { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 18%; color: #ff4d3d; font-weight: 600; box-shadow: inset 0 0 160px rgba(200, 0, 0, 0.55); pointer-events: none; }
-.hud-objective { position: absolute; left: 16px; top: 44px; max-width: 60%; font-size: 14px; color: #f0d9a8; pointer-events: none; }
-.hud-revealed { position: absolute; right: 16px; top: 40px; color: #ff6b5a; font-weight: 600; pointer-events: none; }
-.hud-vote { position: absolute; left: 50%; top: 12%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
-.hud-vote-title { color: #ffb35a; font-weight: 600; text-shadow: 0 1px 3px #000; }
-.hud-vote-plates { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.hud-vote-plates .plate { padding: 2px 8px; border: 1px solid #3a9fc6; background: rgba(10, 8, 8, 0.6); font-size: 13px; }
-.hud-vote-plates .plate.skip { border-color: #b8b0a0; }
-.hud-vote-plates .plate.mine { box-shadow: 0 0 0 2px #e8e2d6; }
-.hud-vote-plates .plate.leading { border-color: #ffb35a; color: #ffb35a; }
-.hud-vote-deciding { color: #ffb35a; font-size: 13px; }
-.hud-banner { position: absolute; left: 50%; top: 26%; transform: translateX(-50%); padding: 6px 14px; background: rgba(10, 8, 8, 0.7); font-weight: 600; pointer-events: none; text-align: center; }
-.hud-banner.guilty { color: #ff6b5a; }
-.hud-banner.innocent { color: #8fd3ff; }
-.hud-bound { position: absolute; left: 50%; top: 54%; transform: translateX(-50%); color: #ffb35a; font-weight: 600; pointer-events: none; }
-.hud-prompt.low { top: 64%; }
-.gallery-list { position: absolute; left: 8px; top: 8px; bottom: 8px; width: 170px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; background: rgba(12, 10, 9, 0.85); padding: 6px; font-size: 12px; }
+
+/* A ragged dark brush band behind text (Dark UI Kit), kept out of the text itself. */
+.band { position: relative; isolation: isolate; padding: 6px 22px; text-shadow: var(--shadow); }
+.band::before {
+  content: "";
+  position: absolute;
+  inset: -4px -6px;
+  z-index: -1;
+  background: var(--band);
+  -webkit-mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+  mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+}
+.icon { width: 30px; height: 30px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8); flex: none; }
+.icon.small { width: 24px; height: 24px; }
+
+/* Dark brush button (Dark UI Kit): a ragged dark band with an ember brush outline. */
+.brush-button {
+  position: relative;
+  isolation: isolate;
+  font: 700 18px var(--font-head);
+  color: var(--ink);
+  text-shadow: 0 2px 3px #000;
+  letter-spacing: 0.04em;
+  min-width: 200px;
+  padding: 18px 40px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s, color 0.12s;
+}
+.brush-button::before, .brush-button::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.brush-button::before {
+  inset: 0;
+  background: rgba(14, 10, 8, 0.92);
+  -webkit-mask-image: var(--ui-grunge-band);
+  mask-image: var(--ui-grunge-band);
+}
+.brush-button::after {
+  inset: 4px 10px;
+  background: rgba(190, 125, 60, 0.3);
+  -webkit-mask-image: var(--ui-grunge-frame);
+  mask-image: var(--ui-grunge-frame);
+  transition: background 0.12s;
+}
+.brush-button:hover:not(:disabled) { transform: scale(1.04); color: #ffe2b8; }
+.brush-button:hover:not(:disabled)::after { background: rgba(255, 170, 80, 0.7); }
+.brush-button:disabled { opacity: 0.45; cursor: default; }
+
+/* A dark, ragged panel (Dark UI Kit brush shapes) with an ember brush outline. */
+.dark-panel { position: relative; isolation: isolate; padding: 60px 120px; }
+.dark-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: radial-gradient(ellipse at 50% 40%, rgba(40, 26, 16, 0.96), rgba(8, 6, 5, 0.96) 70%);
+  -webkit-mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+  mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+}
+.dark-panel::after {
+  content: "";
+  position: absolute;
+  inset: 14px 26px;
+  z-index: -1;
+  background: rgba(170, 110, 60, 0.28);
+  -webkit-mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
+  mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
+}
+
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--night); }
+.overlay.dim { background: radial-gradient(ellipse at 50% 45%, rgba(6, 5, 4, 0.55), rgba(3, 2, 2, 0.9)); flex-direction: column; gap: 14px; }
+.overlay.error { color: var(--blood); }
+.overlay .note { font-size: 13px; color: var(--ink-dim); }
+
+.title-screen {
+  flex-direction: column;
+  gap: 22px;
+  text-align: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at 50% 38%, #2a1d12 0%, #120d09 45%, #050404 80%);
+}
+.title-screen h1 {
+  font: 800 clamp(40px, 7vw, 78px) var(--font-logo);
+  letter-spacing: 0.16em;
+  margin: 0;
+  color: #f4e3c4;
+  text-shadow: 0 0 18px rgba(255, 150, 60, 0.45), 0 3px 4px #000;
+}
+.title-screen .tagline { font: 600 17px var(--font-head); margin: 0; }
+.buttons { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+
+.result-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; min-width: 360px; }
+.result-panel h2 { font: 800 34px var(--font-head); margin: 0 0 4px; letter-spacing: 0.06em; }
+.result-panel h2.traitor { color: var(--blood); }
+.result-panel h2.adventurers { color: var(--frost); }
+.result-panel p { margin: 0; }
+.result-panel .brush-button { margin-top: 12px; }
+
+/* HUD */
+.hud-top {
+  position: absolute; left: 16px; top: 12px;
+  display: flex; gap: 12px; align-items: center;
+  font: 600 15px var(--font-head);
+  pointer-events: none;
+}
+.hud-top .stat { display: flex; align-items: center; gap: 6px; }
+.role-traitor { color: var(--blood); }
+.role-adventurer { color: var(--frost); }
+.timer { font-variant-numeric: tabular-nums; color: var(--ink-dim); }
+.hud-objective {
+  position: absolute; left: 16px; top: 58px; max-width: 58%;
+  font: 500 14px var(--font-body); color: #f3dcae;
+  pointer-events: none;
+}
+.hud-possess {
+  position: absolute; right: 16px; top: 12px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--blood); font: 600 14px var(--font-head);
+  pointer-events: none;
+}
+.hud-revealed {
+  position: absolute; right: 16px; top: 58px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--blood); font: 700 15px var(--font-head);
+  pointer-events: none;
+}
+.hud-prompt {
+  position: absolute; left: 50%; top: 60%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  font: 600 16px var(--font-head);
+  pointer-events: none;
+}
+.hud-prompt.low { top: 67%; }
+.hud-error { position: absolute; left: 50%; top: 74%; transform: translateX(-50%); color: var(--ember); font: 600 14px var(--font-head); white-space: nowrap; pointer-events: none; }
+.hud-bound {
+  position: absolute; left: 50%; top: 52%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  color: var(--ember); font: 700 17px var(--font-head);
+  pointer-events: none;
+}
+.hud-banner {
+  position: absolute; left: 50%; top: 30%; transform: translateX(-50%);
+  font: 700 19px var(--font-head); white-space: nowrap; text-align: center;
+  pointer-events: none;
+}
+.hud-banner.guilty { color: var(--blood); }
+.hud-banner.innocent { color: var(--frost); }
+.hud-banner.passed { color: var(--ink-dim); }
+.pain {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 16%;
+  box-shadow: inset 0 0 160px rgba(200, 0, 0, 0.55);
+  pointer-events: none;
+}
+.pain .band { color: #ff5a45; font: 700 18px var(--font-head); }
+.crosshair { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: var(--ink); border-radius: 50%; box-shadow: 0 0 2px #000; pointer-events: none; }
+.hint {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+  font: 500 12px var(--font-body); color: #d9cdb8; white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Vote: a brush band header and a brush chip per plate. */
+.hud-vote {
+  position: absolute; left: 50%; top: 9%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.hud-vote-title { font: 700 16px var(--font-head); color: var(--ember); white-space: nowrap; padding: 10px 34px; }
+.hud-vote-plates { display: flex; gap: 8px; }
+.hud-vote-plates .plate {
+  width: 96px; height: 60px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font: 600 13px var(--font-head); color: var(--ink); text-shadow: 0 1px 2px #000;
+  position: relative; isolation: isolate;
+}
+.hud-vote-plates .plate::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1;
+  background: rgba(10, 8, 7, 0.85);
+  -webkit-mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+  mask: var(--ui-grunge-band) center / 100% 100% no-repeat;
+}
+.hud-vote-plates .plate::after {
+  content: "";
+  position: absolute; inset: 2px 4px; z-index: -1;
+  background: rgba(150, 140, 125, 0.35);
+  -webkit-mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
+  mask: var(--ui-grunge-frame) center / 100% 100% no-repeat;
+}
+.hud-vote-plates .plate b { font: 800 18px var(--font-head); }
+.hud-vote-plates .plate.skip { color: var(--ink-dim); }
+.hud-vote-plates .plate.mine::after { background: rgba(242, 232, 213, 0.9); }
+.hud-vote-plates .plate.leading { color: var(--ember); }
+.hud-vote-plates .plate.leading::after { background: rgba(255, 170, 80, 0.95); }
+.hud-vote-deciding { color: var(--ember); font: 700 14px var(--font-head); }
+
+/* Development model viewer (?gallery) */
+.gallery-list { position: absolute; left: 8px; top: 8px; bottom: 8px; width: 170px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; background: rgba(12, 10, 9, 0.85); padding: 6px; font: 12px system-ui, sans-serif; }
 .gallery-list button { font: inherit; text-align: left; padding: 2px 6px; background: transparent; color: #e8e2d6; border: 0; cursor: pointer; }
 .gallery-list button.on { background: #4a4038; }
-.gallery-info { position: absolute; left: 190px; top: 8px; padding: 4px 8px; background: rgba(12, 10, 9, 0.85); font-size: 13px; }
+.gallery-info { position: absolute; left: 190px; top: 8px; padding: 4px 8px; background: rgba(12, 10, 9, 0.85); font: 13px system-ui, sans-serif; }
+
+/* Shown to the traitor for a few seconds when the match starts. */
+.role-notice {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center; pointer-events: none;
+  animation: role-notice 4s ease-out forwards;
+}
+.role-notice strong { font: 800 46px var(--font-head); color: #ff3b2a; letter-spacing: 0.08em; text-shadow: 0 0 18px rgba(255, 40, 20, 0.6), 0 3px 4px #000; }
+.role-notice span { font: 600 16px var(--font-head); color: #ffb0a4; text-shadow: var(--shadow); }
+.icon.big { width: 72px; height: 72px; }
+@keyframes role-notice {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
+  10% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}

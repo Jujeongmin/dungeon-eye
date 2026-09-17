@@ -39,9 +39,17 @@
 | Adventure_Character | Adventure Character | Maksim Bugrimov | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | explorer (플레이어, Man_Full 프리팹 — 코스튬은 부위 켜고 끄기) |
 | Kevin Iglesias | Human Soldier Animations FREE | Kevin Iglesias | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | explorer의 애니메이션(Rifle_Aim01, Rifle_Aim01_Shoot01, Run01_Forward, Death01) |
 | UMA, o3n | UMA 3 / o3n Male and Female UMA Races | UMA Steering Group / o3n | UMA: MIT (패키지 안 LICENSE.md), o3n: Standard Unity Asset Store EULA | 무료 | 가능 | 아직 없음 (검토 후 보류: 일상복 위주, 웹 내보내기 번거로움) |
+| kΩsmaragd | Dark UI Kit | kΩsmaragd | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | UI: 글자 뒤 어두운 붓질 띠, 버튼·패널·투표 칸의 붓질 테두리 (public/assets/ui/grunge_*) |
+| Turbo Disk | Dark Fantasy RPG Icons – Free Basic Pack (25) (페이지에 AI 제작 표기) | Turbo Disk | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | UI 아이콘: 하트, 해골, 악마(배신자), 방패(모험가), 손(상호작용), 덫(묶임) |
+| StoneUI | Stone UI | SiLena_ART | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 쓰지 않음 (로우폴리 느낌이 강함) |
+| Strategic Warfare UI Starter Pack | Strategic Warfare Sci-fi UI Starter Pack | Studio Ken O. | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 쓰지 않음 (SF 분위기) |
 | IdiaSoftware | Zombie Free Character Sounds (추정) | Idia Software LLC | **확인 필요** | **확인 필요** | **확인 필요** | 아직 없음 |
 
 페이지 주소:
+- Dark UI Kit — https://assetstore.unity.com/packages/2d/gui/dark-ui-kit-330700
+- Dark Fantasy RPG Icons – Free Basic Pack (25) — https://assetstore.unity.com/packages/2d/gui/icons/dark-fantasy-rpg-icons-free-basic-pack-25-330538
+- Stone UI — https://assetstore.unity.com/packages/2d/gui/icons/stone-ui-182526
+- Strategic Warfare Sci-fi UI Starter Pack — https://assetstore.unity.com/packages/2d/gui/icons/strategic-warfare-sci-fi-ui-starter-pack-391120
 - Decrepit Dungeon LITE — https://assetstore.unity.com/packages/3d/environments/dungeons/decrepit-dungeon-lite-33936
 - Free Low Poly Dungeon Pack — https://assetstore.unity.com/packages/3d/environments/dungeons/free-low-poly-dungeon-pack-398788
 - Stylized Dungeon - Free Pack — https://assetstore.unity.com/packages/3d/environments/dungeons/stylized-dungeon-free-pack-178268
@@ -76,3 +84,10 @@
 3. **IdiaSoftware (좀비 사운드)** — 폴더 이름은 `ZombieFreeCharacterSounds`인데, 스토어에서 찾은 것은 유료
    완전판 "Zombie Complete Character Sounds"(20달러, https://assetstore.unity.com/packages/audio/sound-fx/zombie-complete-character-sounds-141733)
    뿐이다. 무료판을 어느 페이지에서 받았는지 My Assets에서 확인하기 전까지 게임에 넣지 않는다.
+
+## 글꼴
+
+npm 패키지(@fontsource)로 넣었고 모두 SIL Open Font License 1.1이다(게임에 넣어 배포 가능).
+- Cinzel (영문 로고) — https://fonts.google.com/specimen/Cinzel
+- Hahmlet (한글 제목·버튼) — https://fonts.google.com/specimen/Hahmlet
+- Noto Serif KR (HUD 본문) — https://fonts.google.com/noto/specimen/Noto+Serif+KR

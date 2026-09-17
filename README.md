@@ -24,6 +24,7 @@ Plan 4 완료: 시간 제한 없는 협동 모험(룬 조각 → 장치 → 봉�
 1. Unity Asset Store에서 [에셋 목록](docs/licenses/asset-provenance.md)의 에셋을 직접 받아 Unity 프로젝트(`../My project`)에 가져온다.
 2. Unity 에디터에서 그 프로젝트를 닫고 `npm run export-glb` (Unity 6000.5.2f1 필요, 결과는 `art-src/_glb`).
 3. `npm run models` (결과는 `public/assets/models`).
+4. `node scripts/extract-ui.mjs` (UI 조각과 아이콘, 결과는 `public/assets/ui`, 저장소에서 제외).
 
 ## 실행
 

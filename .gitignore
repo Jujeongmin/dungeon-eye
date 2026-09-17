@@ -3,3 +3,4 @@ dist/
 art-src/
 # Converted Unity Asset Store models: the EULA forbids redistributing them outside the game.
 public/assets/models/*.glb
+public/assets/ui/

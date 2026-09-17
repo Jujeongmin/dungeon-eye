@@ -1,6 +1,7 @@
 import type { HudState, ObjectiveHud, VoteHud } from "../game/render/MatchView";
+import { useEffect, useState } from "react";
+import { ICONS } from "./theme";
 
-const ROLE_LABEL = { adventurer: "모험가", traitor: "배신자" } as const;
 
 const ERROR_LABEL: Record<string, string> = {
   not_ready: "아직 빙의할 수 없어요",
@@ -28,6 +29,22 @@ const ERROR_LABEL: Record<string, string> = {
 const PAIN_SHOW_MS = 1500;
 const ERROR_SHOW_MS = 2000;
 const VOTE_BANNER_MS = 6000;
+const ROLE_NOTICE_MS = 4000;
+
+// Shows the traitor, once, that they are the traitor.
+function useTraitorNotice(role: HudState["role"]): boolean {
+  const [shownAt, setShownAt] = useState<number | null>(null);
+  const [, redraw] = useState(0);
+  useEffect(() => {
+    if (role === "traitor" && shownAt === null) setShownAt(performance.now());
+  }, [role, shownAt]);
+  useEffect(() => {
+    if (shownAt === null) return;
+    const timer = setTimeout(() => redraw((n) => n + 1), ROLE_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [shownAt]);
+  return shownAt !== null && performance.now() - shownAt < ROLE_NOTICE_MS;
+}
 
 function clock(ms: number): string {
   const s = Math.ceil(ms / 1000);
@@ -58,17 +75,18 @@ function VotePanel({ vote }: { vote: VoteHud }) {
   const deciding = vote.leading !== null && vote.decideInMs !== null;
   return (
     <div className="hud-vote">
-      <div className="hud-vote-title">
-        투표! {seconds(vote.remainingMs)}초 안에 발판에 서세요 · 과반 {vote.needed}명이면 바로 결정
+      <div className="hud-vote-title band">
+        투표 {seconds(vote.remainingMs)}초 — 발판에 서서 지목 · {vote.needed}명이면 바로 결정
       </div>
       <div className="hud-vote-plates">
         {vote.plates.map((p, i) => (
           <span key={i} className={`plate${p.skip ? " skip" : ""}${vote.mine === i ? " mine" : ""}${vote.leading === i ? " leading" : ""}`}>
-            {p.name} {p.votes}
+            {p.name}
+            <b>{p.votes}</b>
           </span>
         ))}
       </div>
-      {deciding && <div className="hud-vote-deciding">{vote.plates[vote.leading!].name} 결정까지 {seconds(vote.decideInMs!)}초</div>}
+      {deciding && <div className="hud-vote-deciding band">{vote.plates[vote.leading!].name} 결정까지 {seconds(vote.decideInMs!)}초</div>}
     </div>
   );
 }
@@ -91,29 +109,74 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
   const error = hud.error && now - hud.error.at < ERROR_SHOW_MS ? (ERROR_LABEL[hud.error.code] ?? null) : null;
   const inside = hud.alive && !hud.escaped;
   const vote = hud.lastVote && hud.lastVote.ageMs < VOTE_BANNER_MS ? hud.lastVote : null;
+  const traitorNotice = useTraitorNotice(hud.role);
   return (
     <>
-      <div className="hud-top">
-        {hud.role && <span className={`role role-${hud.role}`}>{ROLE_LABEL[hud.role]}</span>}
-        {hud.hp !== null && <span className="hp">체력 {hud.hp}</span>}
-        {hud.elapsedMs !== null && <span className="timer">{clock(hud.elapsedMs)}</span>}
+      <div className="hud-top band">
+        {hud.role && (
+          <span className={`stat role-${hud.role}`}>
+            <img className="icon" src={hud.role === "traitor" ? ICONS.traitor : ICONS.adventurer} alt="" />
+            {hud.name}
+          </span>
+        )}
+        {hud.hp !== null && (
+          <span className="stat">
+            <img className="icon small" src={ICONS.heart} alt="" />
+            {hud.hp}
+          </span>
+        )}
+        {hud.elapsedMs !== null && <span className="stat timer">{clock(hud.elapsedMs)}</span>}
       </div>
-      {hud.objective && <div className="hud-objective">{objectiveText(hud.objective)}</div>}
-      {hud.revealed && <div className="hud-revealed">배신자: {hud.revealed}</div>}
-      {hud.role === "traitor" && inside && <div className="hud-possess">{possessionText(hud)}</div>}
-      {inside && hud.interactHint && <div className="hud-prompt">{hud.interactHint}</div>}
-      {hud.nearExit && <div className="hud-prompt low">F: 탈출</div>}
+      {hud.objective && <div className="hud-objective band">{objectiveText(hud.objective)}</div>}
+      {hud.revealed && (
+        <div className="hud-revealed band">
+          <img className="icon small" src={ICONS.skull} alt="" />
+          배신자: {hud.revealed}
+        </div>
+      )}
+      {hud.role === "traitor" && inside && (
+        <div className="hud-possess band">
+          <img className="icon small" src={ICONS.traitor} alt="" />
+          {possessionText(hud)}
+        </div>
+      )}
+      {inside && hud.interactHint && (
+        <div className="hud-prompt band">
+          <img className="icon small" src={ICONS.hand} alt="" />
+          {hud.interactHint}
+        </div>
+      )}
+      {hud.nearExit && <div className="hud-prompt low band">F: 탈출</div>}
       {hud.vote && <VotePanel vote={hud.vote} />}
       {vote && (
-        <div className={`hud-banner ${vote.guilty ? "guilty" : "innocent"}`}>{voteResultText(vote.name, vote.guilty)}</div>
+        <div className={`hud-banner band ${vote.name === null ? "passed" : vote.guilty ? "guilty" : "innocent"}`}>
+          {voteResultText(vote.name, vote.guilty)}
+        </div>
       )}
-      {hud.boundMs !== null && <div className="hud-bound">묶여 있음 {seconds(hud.boundMs)}초</div>}
-      {!hud.alive && <div className="hud-prompt">쓰러졌습니다 — 결과를 기다리는 중</div>}
-      {hud.escaped && <div className="hud-prompt">탈출했습니다 — 결과를 기다리는 중</div>}
-      {pain && <div className="pain">가까이서 비명이 들렸다!</div>}
-      {error && <div className="hud-error">{error}</div>}
+      {hud.boundMs !== null && (
+        <div className="hud-bound band">
+          <img className="icon small" src={ICONS.bound} alt="" />
+          묶여 있음 {seconds(hud.boundMs)}초
+        </div>
+      )}
+      {!hud.alive && (
+        <div className="hud-prompt band">
+          <img className="icon small" src={ICONS.skull} alt="" />
+          쓰러졌습니다 — 결과를 기다리는 중
+        </div>
+      )}
+      {hud.escaped && <div className="hud-prompt band">탈출했습니다 — 결과를 기다리는 중</div>}
+      {traitorNotice && (
+        <div className="role-notice">
+          <img className="icon big" src={ICONS.traitor} alt="" />
+          <strong>당신은 배신자다</strong>
+          <span className="band">몬스터에 빙의해 모험가들의 탈출을 막아라 (Q)</span>
+        </div>
+      )}
+      {pain && <div className="pain"><span className="band">가까이서 비명이 들렸다!</span></div>}
+      {error && <div className="hud-error band">{error}</div>}
       {inside && !hud.possession && <div className="crosshair" />}
-      <div className="hint">
+      <div className="hint band">
         클릭해서 조작 · WASD 이동 · 클릭 사격 · E 상호작용 · F 탈출{hud.role === "traitor" ? " · Q 빙의 · R 해제" : ""} · 투표 때 발판에 서서 배신자 지목
       </div>
     </>

@@ -22,7 +22,7 @@ import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
 import { bakedTint, buildStaticBatch, type BakeLight, type StaticPiece } from "./staticBatch";
 import { Viewmodel } from "./Viewmodel";
 import { costumeForSeat } from "./costumes";
-import { displayName } from "./names";
+import { displayName, ownName } from "./names";
 import { playScream, playThud } from "./scream";
 
 export const LOOK_SENSITIVITY = 0.0022;
@@ -98,6 +98,7 @@ export interface HudState {
   canPossess: boolean;
   nearExit: boolean;
   players: number;
+  name: string;
   painAt: number | null;
   error: { code: string; at: number } | null;
   result: MatchResult | null;
@@ -509,6 +510,7 @@ export class MatchView {
         && possessReadyInMs === 0 && this.possessCandidate(match) !== null,
       nearExit: free && !!match && match.objectives.stage === "exit" && !!exit && distance(this.pose, exit) <= EXIT_RADIUS,
       players: match?.players.length ?? 0,
+      name: ownName(me),
       painAt: this.painAt,
       error: this.error,
       result: match?.result ?? null,

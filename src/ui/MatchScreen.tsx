@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Pose } from "../game/match/types";
 import { MatchView, type HudState } from "../game/render/MatchView";
 import type { MatchClient } from "../net/matchClient";
+import { displayName } from "../game/render/names";
 import { Hud } from "./Hud";
 
 export interface MatchScreenProps {
@@ -58,22 +59,29 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
   return (
     <div className="app" ref={host}>
       {ready && hud && !result && <Hud hud={hud} now={now} />}
-      {!ready && !loadError && <div className="overlay">불러오는 중 {progress.done}/{progress.total}</div>}
-      {loadError && <div className="overlay error">불러오기 실패: {loadError}</div>}
-      {ready && waiting && <div className="overlay dim">플레이어를 기다리는 중 {hud.players}/4</div>}
+      {!ready && !loadError && (
+        <div className="overlay"><span className="band">유적으로 내려가는 중… {progress.done}/{progress.total}</span></div>
+      )}
+      {loadError && <div className="overlay error"><span className="band">불러오기 실패: {loadError}</span></div>}
+      {ready && waiting && <div className="overlay dim"><span className="band">플레이어를 기다리는 중 {hud.players}/4</span></div>}
       {ready && hud?.phase === "error" && (
-        <div className="overlay dim error">
-          <p>연결 오류: {client.state.error}</p>
-          <button type="button" onClick={onExit}>처음으로</button>
+        <div className="overlay dim">
+          <div className="dark-panel result-panel">
+            <h2 className="traitor">연결 오류</h2>
+            <p>{client.state.error}</p>
+            <button type="button" className="brush-button" onClick={onExit}>처음으로</button>
+          </div>
         </div>
       )}
       {result && (
-        <div className="overlay dim result">
-          <h2>{result.winner === "traitor" ? "배신자 승리" : "모험가 승리"}</h2>
-          <p>{REASON_LABEL[result.reason]}</p>
-          {mine && <p>당신은 {mine.role === "traitor" ? "배신자" : "모험가"} — {mine.won ? "승리" : "패배"}</p>}
-          <p>배신자: {result.traitor === me ? "당신" : result.traitor}</p>
-          <button type="button" onClick={onExit}>처음으로</button>
+        <div className="overlay dim">
+          <div className="dark-panel result-panel">
+            <h2 className={result.winner}>{result.winner === "traitor" ? "배신자 승리" : "모험가 승리"}</h2>
+            <p>{REASON_LABEL[result.reason]}</p>
+            {mine && <p>당신은 {mine.role === "traitor" ? "배신자" : "모험가"} — {mine.won ? "승리" : "패배"}</p>}
+            <p>배신자: {result.traitor === me ? "당신" : displayName(result.traitor, me)}</p>
+            <button type="button" className="brush-button" onClick={onExit}>처음으로</button>
+          </div>
         </div>
       )}
     </div>
