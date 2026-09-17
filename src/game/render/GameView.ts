@@ -2,8 +2,10 @@ import * as THREE from "three";
 import { ModelLibrary } from "../assets/ModelLibrary";
 import { LEVEL_1, TILE_SIZE, parseLevel, solidAt, type LevelLayout } from "../rules/levelLayout";
 import { EYE_HEIGHT, applyLook, stepPlayer, type PlayerPose } from "../rules/movement";
+import { AKM, canFire, resolveShot, type Ray3 } from "../rules/combat";
 import { FpsInput } from "./FpsInput";
 import { Viewmodel } from "./Viewmodel";
+import { ZombieActor } from "./ZombieActor";
 
 export const LOOK_SENSITIVITY = 0.0022;
 
@@ -12,12 +14,14 @@ export const LOOK_SENSITIVITY = 0.0022;
 export const KIT = { wallYawOffset: Math.PI / 2, wallInset: 0, ceilingYOffset: 0 };
 
 const KIT_MODELS = ["dd_floor_a", "dd_ceiling", "dd_wall_a", "dd_pillar_a", "dd_torch", "dd_barrel", "chest_closed"];
-export const LEVEL_MODELS = [...KIT_MODELS, "wpn_akm"];
+export const LEVEL_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1"];
 
 export interface GameDebugHandle {
   pose(): { x: number; z: number; yaw: number; pitch: number };
   setPose(p: { x: number; z: number; yaw: number; pitch?: number }): void;
   stats(): { triangles: number; calls: number };
+  fire(): string | null;
+  zombies(): { id: string; hp: number; alive: boolean; x: number; z: number }[];
 }
 
 export class GameView {
@@ -34,6 +38,10 @@ export class GameView {
   private viewmodel: Viewmodel | null = null;
   private frame = 0;
   private disposed = false;
+  private zombies: ZombieActor[] = [];
+  private lastShotAt = -Infinity;
+  private onZombiesChanged: ((remaining: number) => void) | undefined;
+  private readonly aim = new THREE.Vector3();
 
   constructor(private readonly container: HTMLElement) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -49,13 +57,17 @@ export class GameView {
     this.resize();
   }
 
-  async start(options: { onProgress?: (done: number, total: number) => void } = {}): Promise<void> {
+  async start(
+    options: { onProgress?: (done: number, total: number) => void; onZombiesChanged?: (remaining: number) => void } = {},
+  ): Promise<void> {
     const library = await ModelLibrary.load();
     await library.preload(LEVEL_MODELS, options.onProgress);
     // React StrictMode mounts twice; the first view may be gone by now.
     if (this.disposed) return;
+    this.onZombiesChanged = options.onZombiesChanged;
     this.buildLevel(library);
-    this.addLights();    this.viewmodel = new Viewmodel(this.camera, library.instance("wpn_akm"));
+    this.addLights();
+    this.spawnZombies(library);    this.viewmodel = new Viewmodel(this.camera, library.instance("wpn_akm"));
     this.clock.start();
     this.frame = requestAnimationFrame(this.tick);
   }
@@ -68,7 +80,39 @@ export class GameView {
         this.pitch = p.pitch ?? 0;
       },
       stats: () => ({ triangles: this.renderer.info.render.triangles, calls: this.renderer.info.render.calls }),
+      fire: () => this.shoot(),
+      zombies: () => this.zombies.map((z) => ({ id: z.id, hp: z.hp, alive: z.alive, x: z.target().x, z: z.target().z })),
     };
+  }
+
+  private spawnZombies(library: ModelLibrary): void {
+    const clips = library.get("zombie1").animations;
+    this.zombies = this.layout.zombieSpawns.map((spawn, i) => {
+      const actor = new ZombieActor(`zombie-${i}`, library.instance("zombie1"), clips, spawn.x, spawn.z);
+      this.scene.add(actor.object);
+      return actor;
+    });
+    this.onZombiesChanged?.(this.zombies.length);
+  }
+
+  // Returns the id of the zombie hit, or null.
+  private shoot(): string | null {
+    this.lastShotAt = this.clock.elapsedTime;
+    this.viewmodel?.fire();
+    this.syncCamera();
+    this.camera.updateMatrixWorld();
+    this.camera.getWorldDirection(this.aim);
+    const ray: Ray3 = {
+      ox: this.camera.position.x, oy: this.camera.position.y, oz: this.camera.position.z,
+      dx: this.aim.x, dy: this.aim.y, dz: this.aim.z,
+    };
+    const hit = resolveShot(
+      ray, this.zombies.map((z) => z.target()), (x, z) => solidAt(this.layout, x, z), AKM.range, TILE_SIZE,
+    );
+    if (!hit) return null;
+    const zombie = this.zombies.find((z) => z.id === hit.id)!;
+    if (zombie.takeHit(AKM.damage)) this.onZombiesChanged?.(this.zombies.filter((z) => z.alive).length);
+    return hit.id;
   }
 
   dispose(): void {
@@ -111,10 +155,15 @@ export class GameView {
       this.scene.add(light);
       this.torches.push(light);
     }
-    const lamp = new THREE.SpotLight(0xfff1dc, 30, 22, 0.8, 0.7, 2);
+    const lamp = new THREE.SpotLight(0xfff1dc, 90, 24, 0.8, 0.7, 2);
     lamp.position.set(0, 0, 0);
     lamp.target.position.set(0, 0, -1);
     this.camera.add(lamp, lamp.target);
+  }
+
+  private syncCamera(): void {
+    this.camera.position.set(this.pose.x, EYE_HEIGHT, this.pose.z);
+    this.camera.rotation.set(this.pitch, this.pose.yaw, 0, "YXZ");
   }
 
   private resize(): void {
@@ -135,8 +184,9 @@ export class GameView {
     const move = this.input.moveInput();
     this.pose = stepPlayer({ ...this.pose, yaw: view.yaw }, move, dt, (x, z) => solidAt(this.layout, x, z));
 
-    this.camera.position.set(this.pose.x, EYE_HEIGHT, this.pose.z);
-    this.camera.rotation.set(this.pitch, this.pose.yaw, 0, "YXZ");
+    this.syncCamera();
+    if (this.input.firing && canFire(this.lastShotAt, this.clock.elapsedTime, AKM.fireInterval)) this.shoot();
+    for (const zombie of this.zombies) zombie.update(dt, this.pose.x, this.pose.z);
     this.viewmodel?.update(dt, move.forward !== 0 || move.strafe !== 0);
 
     const t = this.clock.elapsedTime;

@@ -6,12 +6,16 @@ export default function App() {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     const view = new GameView(host.current!);
     let cancelled = false;
     view
-      .start({ onProgress: (done, total) => !cancelled && setProgress({ done, total }) })
+      .start({
+        onProgress: (done, total) => !cancelled && setProgress({ done, total }),
+        onZombiesChanged: (n) => !cancelled && setRemaining(n),
+      })
       .then(() => !cancelled && setReady(true))
       .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)));
     if (import.meta.env.DEV) (window as unknown as { __game?: unknown }).__game = view.debugHandle();
@@ -23,7 +27,7 @@ export default function App() {
 
   return (
     <div className="app" ref={host}>
-      <div className="hud">DUNGEON EYE</div>
+      <div className="hud">DUNGEON EYE{remaining !== null && ` · 남은 좀비 ${remaining}`}</div>
       {ready && <div className="crosshair" />}
       {ready && <div className="hint">클릭해서 조작 · WASD 이동 · 마우스 조준</div>}
       {!ready && !error && (
