@@ -97,21 +97,34 @@
 
 ## 9. 에셋 후보 (Unity 에셋스토어, 다운로드 후 glTF 변환 대상)
 
-**주의**: 아래는 검색으로 찾은 후보 링크다. 다운로드 전 반드시 (1) 가격이 실제 Free인지,
-(2) 라이선스가 재배포·타 엔진 변환·상업 이용을 허용하는지 페이지에서 직접 확인해야 한다.
-비공식 "무료 다운로드" 미러 사이트(예: unityassetcollection.com류)는 정품 유료 에셋을
-무단 재배포하는 경우가 있어 후보에서 제외했다 — 반드시 assetstore.unity.com 공식 링크만 사용.
+**주의**: 아래는 제목/카테고리 자체가 "Free"인 항목만 추렸다(에셋스토어 공식 무료 큐레이션
+리스트 포함). 그래도 다운로드 직전엔 페이지에서 가격 $0 표시와 라이선스(재배포·타 엔진 변환·
+상업 이용 허용 여부)를 직접 다시 확인해야 한다. 비공식 "무료 다운로드" 미러 사이트
+(예: unityassetcollection.com, unityassets4free.com류)는 정품 유료 에셋을 무단 재배포하는
+경우가 있어 후보에서 제외했다 — 반드시 assetstore.unity.com 공식 링크만 사용.
 
 | 용도 | 후보 | 링크 |
 |---|---|---|
-| 던전 환경 | Free Dungeon Assets 큐레이션 목록 (여러 무료 팩 모음) | https://assetstore.unity.com/lists/free-dungeon-assets-81248 |
-| 던전 환경 | Dungeon Enviroment Starter Pack (세미리얼) | https://assetstore.unity.com/packages/3d/environments/dungeons/dungeon-enviroment-starter-pack-387772 |
+| 던전 환경 | Free Low Poly Dungeon Pack | https://assetstore.unity.com/packages/3d/environments/dungeons/free-low-poly-dungeon-pack-398788 |
+| 던전 환경 | Stylized Dungeon - Free Pack | https://assetstore.unity.com/packages/3d/environments/dungeons/stylized-dungeon-free-pack-178268 |
+| 던전 환경 | Free Simple Dungeon Props | https://assetstore.unity.com/packages/3d/environments/dungeons/free-simple-dungeon-props-225521 |
+| 던전 환경(큐레이션) | Free Dungeon Assets 목록 | https://assetstore.unity.com/lists/free-dungeon-assets-81248 |
+| 몬스터(큐레이션) | Free Fantasy Creatures 목록 | https://assetstore.unity.com/lists/free-fantasy-creatures-11348 |
+| 몬스터(큐레이션) | Free Monsters 목록 | https://assetstore.unity.com/lists/free-monsters-14593 |
 | FPS 무기 | FA: FPS Weapons Pack - Free | https://assetstore.unity.com/packages/3d/props/guns/fa-fps-weapons-pack-free-254020 |
-| FPS 무기(참고, 유료 가능성) | Animated FPS Weapons Pack (Part 1) | https://assetstore.unity.com/packages/3d/props/weapons/animated-fps-weapons-pack-part-1-92280 |
-| 몬스터 | Monster_Pack 1 (가격 확인 필요) | https://assetstore.unity.com/packages/3d/characters/creatures/monster-pack-1-329901 |
-| 몬스터 | MONSTER FULL PACK VOL 1 (가격 확인 필요) | https://assetstore.unity.com/packages/3d/characters/creatures/monster-full-pack-vol-1-165213 |
-| 사람 캐릭터 | Male Soldier - Humanoid Rigged and Animated (가격 확인 필요) | https://assetstore.unity.com/packages/3d/characters/humanoids/humans/male-soldier-humanoid-rigged-and-animated-124459 |
-| 사람 캐릭터 | Animated Soldier - Midpoly (가격 확인 필요, 낮은 가격대) | https://assetstore.unity.com/packages/3d/characters/humanoids/animated-soldier-midpoly-4942 |
+| FPS 무기 | Free FPS Weapon - MP7 | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-mp7-177246 |
+| FPS 무기 | Free FPS Weapon - AKM | https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-akm-180663 |
+| FPS 무기 | Free Pack - Gun | https://assetstore.unity.com/packages/3d/props/guns/free-pack-gun-308387 |
+| FPS 무기(큐레이션) | Best Free Weapons 목록 | https://assetstore.unity.com/lists/best-free-weapons-42298 |
+| 사람 캐릭터 | FREE Low Poly Human - RPG Character | https://assetstore.unity.com/packages/3d/characters/humanoids/fantasy/free-low-poly-human-rpg-character-219979 |
+| 사람 캐릭터 | Character Pack: Free Sample | https://assetstore.unity.com/packages/3d/characters/humanoids/character-pack-free-sample-79870 |
+| 사람 캐릭터(필터 적용된 검색) | 에셋스토어 무료 캐릭터 전체 | https://assetstore.unity.com/?category=3d%2Fcharacters&free=true&orderBy=1 |
+
+**사람 캐릭터 관련 솔직한 평가**: 에셋스토어 무료 항목 중 "리얼한" 사람 캐릭터는 거의 없고
+대부분 로우폴리/스타일라이즈드다. 대안으로 **Adobe Mixamo**(무료, 계정만 필요)를 권장 —
+비교적 사실적인 리깅된 인간형 캐릭터 + 방대한 애니메이션 라이브러리를 FBX로 제공하고,
+Three.js/glTF 파이프라인으로 옮긴 사례도 많아 dungeon-warden 압축 파이프라인과 궁합이 좋음.
+https://www.mixamo.com
 
 파일 받으면 전달해줄 것 — 받는 대로 라이선스 조건 같이 확인하고 `gltf-transform` 변환
 파이프라인에 태우겠음.
