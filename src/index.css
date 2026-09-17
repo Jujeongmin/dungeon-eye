@@ -1,4 +1,15 @@
-html, body, #root { margin: 0; height: 100%; background: #0b0a09; color: #e8e2d6; font-family: system-ui, sans-serif; }
+html, body { margin: 0; height: 100%; background: #000; color: #e8e2d6; font-family: system-ui, sans-serif; }
+body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* The game is a fixed 16:9 landscape stage; leftover window space shows as black bars. */
+#root {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  width: min(100vw, calc(100dvh * 16 / 9));
+  height: min(100dvh, calc(100vw * 9 / 16));
+  background: #0b0a09;
+  overflow: hidden;
+}
 .app { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .app canvas { display: block; width: 100%; height: 100%; }
 .hint { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); font-size: 13px; opacity: 0.7; pointer-events: none; }
