@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { Pose } from "../match/types";
-import { reachWithArm } from "./armIk";
+import { reachWithArm, setWorldRotation } from "./armIk";
 import { isCostumePart, type Costume } from "./costumes";
 import { withUpperBodyPose } from "./playerAnimation";
 import { ActionBlender, clipByName, skinnedHeight } from "./skinned";
@@ -9,13 +9,25 @@ const PLAYER_HEIGHT = 1.8;
 const FOLLOW_RATE = 12;
 const FALL_RATE = 6;
 const RIFLE_LENGTH = 0.75;
-// The rifle is shouldered: its stock sits here relative to the chest bone, in body space
-// (the model faces +z, so its right side is -x). Tuned by eye.
-export const RIFLE_STOCK = new THREE.Vector3(-0.13, 0.08, 0.06);
-// Where the hands hold it, as fractions of its length from the stock, and a small drop below its centre line.
-export const RIFLE_GRIP = { trigger: 0.34, barrel: 0.64, drop: -0.04 };
-// How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
-const NECK_KEEP = 0.2;
+
+export interface HandTurn { on: boolean; x: number; y: number; z: number }
+
+// How the rifle is held. Mutable so the development tuner can adjust it live.
+export const GRIP = {
+  // Where the stock sits relative to the chest bone, in body space (the model faces +z, its right is -x).
+  stock: { x: -0.13, y: 0.08, z: 0.06 },
+  // Where the hands hold it, as fractions of its length from the stock, and a drop below its centre line.
+  trigger: 0.34,
+  barrel: 0.64,
+  drop: -0.04,
+  // How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
+  neckKeep: 0.2,
+  // Optional hand rotation in the rifle's space, in degrees; off keeps the animation's hand rotation.
+  rightHand: { on: false, x: 0, y: 0, z: 0 } as HandTurn,
+  leftHand: { on: false, x: 0, y: 0, z: 0 } as HandTurn,
+};
+
+const DEG = Math.PI / 180;
 
 export type PlayerStatus = "active" | "dead" | "escaped";
 
@@ -88,6 +100,9 @@ export class RemotePlayerActor {
   private readonly rig: Rig | null;
   private readonly rifleBox = new THREE.Box3();
   private readonly at = new THREE.Vector3();
+  private readonly turn = new THREE.Quaternion();
+  private readonly euler = new THREE.Euler();
+  private readonly handTurn = new THREE.Quaternion();
   private placed = false;
   private dead = false;
 
@@ -154,7 +169,7 @@ export class RemotePlayerActor {
     if (!weapon || !rig) return;
     weapon.visible = !this.dead;
     if (this.dead) return;
-    for (const { bone, rest } of rig.straighten) bone.quaternion.slerp(rest, 1 - NECK_KEEP);
+    for (const { bone, rest } of rig.straighten) bone.quaternion.slerp(rest, 1 - GRIP.neckKeep);
     this.object.updateMatrixWorld(true);
 
     const box = this.rifleBox;
@@ -162,17 +177,24 @@ export class RemotePlayerActor {
     const centreX = (box.min.x + box.max.x) / 2;
     const centreY = (box.min.y + box.max.y) / 2;
     this.object.worldToLocal(rig.chest.getWorldPosition(this.at));
-    weapon.position.copy(this.at).add(RIFLE_STOCK);
+    weapon.position.copy(this.at);
+    weapon.position.x += GRIP.stock.x;
+    weapon.position.y += GRIP.stock.y;
+    weapon.position.z += GRIP.stock.z;
     weapon.position.z -= box.min.z;
     weapon.updateMatrixWorld(true);
 
-    const hold = (arm: Arm, along: number) => {
+    const hold = (arm: Arm, along: number, hand: HandTurn) => {
       // The rifle is not rotated in body space, so its box offsets add straight onto its position.
-      this.at.set(centreX, centreY + RIFLE_GRIP.drop, box.min.z + length * along).add(weapon.position);
+      this.at.set(centreX, centreY + GRIP.drop, box.min.z + length * along).add(weapon.position);
       reachWithArm(arm.upper, arm.lower, arm.hand, this.object.localToWorld(this.at));
+      if (!hand.on) return;
+      weapon.getWorldQuaternion(this.turn);
+      this.turn.multiply(this.handTurn.setFromEuler(this.euler.set(hand.x * DEG, hand.y * DEG, hand.z * DEG)));
+      setWorldRotation(arm.hand, this.turn);
     };
-    hold(rig.right, RIFLE_GRIP.trigger);
-    hold(rig.left, RIFLE_GRIP.barrel);
+    hold(rig.right, GRIP.trigger, GRIP.rightHand);
+    hold(rig.left, GRIP.barrel, GRIP.leftHand);
   }
 
   sync(pose: Pose | null, status: PlayerStatus, dt: number): void {

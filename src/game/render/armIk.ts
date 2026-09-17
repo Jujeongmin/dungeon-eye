@@ -12,6 +12,14 @@ const turn = new THREE.Quaternion();
 const own = new THREE.Quaternion();
 const parent = new THREE.Quaternion();
 
+// Gives a bone this world rotation, expressed in its parent's space.
+export function setWorldRotation(bone: THREE.Object3D, rotation: THREE.Quaternion): void {
+  if (bone.parent) bone.parent.getWorldQuaternion(parent).invert();
+  else parent.identity();
+  bone.quaternion.copy(parent.multiply(rotation));
+  bone.updateMatrixWorld(true);
+}
+
 // Applies a world-space rotation to a bone, keeping it in its parent's space.
 function rotateInWorld(bone: THREE.Object3D, rotation: THREE.Quaternion): void {
   bone.getWorldQuaternion(own).premultiply(rotation);
