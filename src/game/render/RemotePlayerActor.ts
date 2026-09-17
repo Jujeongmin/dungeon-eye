@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { Pose } from "../match/types";
+import { reachWithArm } from "./armIk";
 import { isCostumePart, type Costume } from "./costumes";
 import { withUpperBodyPose } from "./playerAnimation";
 import { ActionBlender, clipByName, skinnedHeight } from "./skinned";
@@ -8,10 +9,13 @@ const PLAYER_HEIGHT = 1.8;
 const FOLLOW_RATE = 12;
 const FALL_RATE = 6;
 const RIFLE_LENGTH = 0.75;
-// The rifle sits in the right hand and points through the left hand, like a two-handed grip.
-// How far along that line its centre is, from the right hand. Tuned by eye against the aim pose.
-const RIFLE_CENTER_AHEAD = 0.16;
-const UP = new THREE.Vector3(0, 1, 0);
+// The rifle is shouldered: its stock sits here relative to the chest bone, in body space
+// (the model faces +z, so its right side is -x). Tuned by eye.
+export const RIFLE_STOCK = new THREE.Vector3(-0.13, 0.08, 0.06);
+// Where the hands hold it, as fractions of its length from the stock, and a small drop below its centre line.
+export const RIFLE_GRIP = { trigger: 0.34, barrel: 0.64, drop: -0.04 };
+// How much of the animation's neck and head tilt to keep; the aim clip bends the neck to a sight.
+const NECK_KEEP = 0.2;
 
 export type PlayerStatus = "active" | "dead" | "escaped";
 
@@ -19,8 +23,36 @@ export interface PlayerModel {
   object: THREE.Object3D;
   clips: THREE.AnimationClip[];
   costume: Costume;
-  // Held in the right hand; the model is expected to have a hand_r bone.
+  // Shouldered and held with both hands; the model needs spine_03 and upperarm/lowerarm/hand bones.
   weapon: THREE.Object3D | null;
+}
+
+interface Arm { upper: THREE.Object3D; lower: THREE.Object3D; hand: THREE.Object3D }
+interface Rig {
+  chest: THREE.Object3D;
+  right: Arm;
+  left: Arm;
+  // Bones straightened back toward their rest pose, with that rest rotation.
+  straighten: { bone: THREE.Object3D; rest: THREE.Quaternion }[];
+}
+
+function findRig(object: THREE.Object3D): Rig | null {
+  const bone = (name: string) => object.getObjectByName(name) ?? null;
+  const arm = (side: "r" | "l"): Arm | null => {
+    const upper = bone(`upperarm_${side}`);
+    const lower = bone(`lowerarm_${side}`);
+    const hand = bone(`hand_${side}`);
+    return upper && lower && hand ? { upper, lower, hand } : null;
+  };
+  const chest = bone("spine_03");
+  const right = arm("r");
+  const left = arm("l");
+  if (!chest || !right || !left) return null;
+  const straighten = ["neck_01", "head"]
+    .map(bone)
+    .filter((b): b is THREE.Object3D => b !== null)
+    .map((b) => ({ bone: b, rest: b.quaternion.clone() }));
+  return { chest, right, left, straighten };
 }
 
 interface Animated {
@@ -53,13 +85,9 @@ export class RemotePlayerActor {
   private readonly revealMark: THREE.Mesh;
   private readonly boundMark: THREE.Mesh;
   private readonly weapon: THREE.Object3D | null;
-  private readonly hand: THREE.Object3D | null;
-  private readonly supportHand: THREE.Object3D | null;
-  private readonly handAt = new THREE.Vector3();
-  private readonly supportAt = new THREE.Vector3();
-  private readonly side = new THREE.Vector3();
-  private readonly lift = new THREE.Vector3();
-  private readonly basis = new THREE.Matrix4();
+  private readonly rig: Rig | null;
+  private readonly rifleBox = new THREE.Box3();
+  private readonly at = new THREE.Vector3();
   private placed = false;
   private dead = false;
 
@@ -75,11 +103,14 @@ export class RemotePlayerActor {
     this.boundMark.position.y = 1.0;
     this.boundMark.visible = false;
     this.object.add(this.body, this.revealMark, this.boundMark);
+    // Rest rotations are read before any clip plays.
+    this.rig = model ? findRig(model.object) : null;
     this.animated = model ? RemotePlayerActor.animate(model) : null;
-    this.hand = model?.object.getObjectByName("hand_r") ?? null;
-    this.supportHand = model?.object.getObjectByName("hand_l") ?? null;
-    this.weapon = model?.weapon && this.hand ? RemotePlayerActor.rifle(model.weapon) : null;
-    if (this.weapon) this.object.add(this.weapon);
+    this.weapon = model?.weapon && this.rig ? RemotePlayerActor.rifle(model.weapon) : null;
+    if (this.weapon) {
+      this.object.add(this.weapon);
+      this.rifleBox.setFromObject(this.weapon);
+    }
     this.object.traverse((o) => {
       o.frustumCulled = false;
     });
@@ -117,20 +148,31 @@ export class RemotePlayerActor {
     return weapon;
   }
 
-  private placeRifle(): void {
-    const { weapon, hand, supportHand } = this;
-    if (!weapon || !hand || !supportHand) return;
+  // Straightens the neck, shoulders the rifle and pulls both hands onto it.
+  private holdRifle(): void {
+    const { weapon, rig } = this;
+    if (!weapon || !rig) return;
     weapon.visible = !this.dead;
     if (this.dead) return;
+    for (const { bone, rest } of rig.straighten) bone.quaternion.slerp(rest, 1 - NECK_KEEP);
     this.object.updateMatrixWorld(true);
-    this.object.worldToLocal(hand.getWorldPosition(this.handAt));
-    this.object.worldToLocal(supportHand.getWorldPosition(this.supportAt));
-    const aim = this.supportAt.sub(this.handAt).normalize();
-    // Keep the rifle upright (magazine down) while it points along the aim line.
-    this.side.crossVectors(UP, aim).normalize();
-    this.lift.crossVectors(aim, this.side);
-    weapon.quaternion.setFromRotationMatrix(this.basis.makeBasis(this.side, this.lift, aim));
-    weapon.position.copy(this.handAt).addScaledVector(aim, RIFLE_CENTER_AHEAD);
+
+    const box = this.rifleBox;
+    const length = box.max.z - box.min.z;
+    const centreX = (box.min.x + box.max.x) / 2;
+    const centreY = (box.min.y + box.max.y) / 2;
+    this.object.worldToLocal(rig.chest.getWorldPosition(this.at));
+    weapon.position.copy(this.at).add(RIFLE_STOCK);
+    weapon.position.z -= box.min.z;
+    weapon.updateMatrixWorld(true);
+
+    const hold = (arm: Arm, along: number) => {
+      // The rifle is not rotated in body space, so its box offsets add straight onto its position.
+      this.at.set(centreX, centreY + RIFLE_GRIP.drop, box.min.z + length * along).add(weapon.position);
+      reachWithArm(arm.upper, arm.lower, arm.hand, this.object.localToWorld(this.at));
+    };
+    hold(rig.right, RIFLE_GRIP.trigger);
+    hold(rig.left, RIFLE_GRIP.barrel);
   }
 
   sync(pose: Pose | null, status: PlayerStatus, dt: number): void {
@@ -155,7 +197,7 @@ export class RemotePlayerActor {
       if (this.dead) a.blender.fadeTo(a.death, 0.1);
       else a.blender.fadeTo(Math.hypot(dx, dz) > 0.03 ? a.run : a.idle);
       a.mixer.update(dt);
-      this.placeRifle();
+      this.holdRifle();
     } else if (this.dead) {
       // The stand-in has no death clip, so it tips over backwards.
       const fall = this.body.rotation;
