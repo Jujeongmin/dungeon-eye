@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest";
+import { LEVEL_1, parseLevel, solidAt } from "../src/game/rules/levelLayout";
+
+const MAP = [
+  "####",
+  "#PZ#",
+  "#.B#",
+  "####",
+];
+
+describe("parseLevel", () => {
+  const level = parseLevel(MAP, 2);
+
+  it("records size, spawns and solidity", () => {
+    expect(level.cols).toBe(4);
+    expect(level.rows).toBe(4);
+    expect(level.playerSpawn).toEqual({ x: 3, z: 3 });
+    expect(level.zombieSpawns).toEqual([{ x: 5, z: 3 }]);
+    expect(level.solid[0][0]).toBe(true);
+    expect(level.solid[1][1]).toBe(false);
+  });
+
+  it("puts a floor and a ceiling on every walkable cell", () => {
+    const floors = level.placements.filter((p) => p.model === "dd_floor_a");
+    const ceilings = level.placements.filter((p) => p.model === "dd_ceiling");
+    expect(floors).toHaveLength(4);
+    expect(ceilings).toHaveLength(4);
+    expect(ceilings[0].y).toBeGreaterThan(0);
+  });
+
+  it("puts one wall panel on each floor/wall edge, facing the floor", () => {
+    const walls = level.placements.filter((p) => p.model === "dd_wall_a");
+    expect(walls).toHaveLength(8);
+    const northOfSpawn = walls.find((w) => w.x === 3 && w.z === 2);
+    expect(northOfSpawn?.rotationY).toBe(0);
+    const westOfSpawn = walls.find((w) => w.x === 2 && w.z === 3);
+    expect(westOfSpawn?.rotationY).toBeCloseTo(Math.PI / 2);
+  });
+
+  it("places props on their cells", () => {
+    expect(level.placements).toContainEqual({ model: "dd_barrel", x: 5, y: 0, z: 5, rotationY: 0 });
+  });
+
+  it("rejects ragged rows and unknown symbols", () => {
+    expect(() => parseLevel(["##", "#"], 2)).toThrow(/row 1/);
+    expect(() => parseLevel(["#?#"], 2)).toThrow(/unknown symbol "\?"/);
+  });
+});
+
+describe("solidAt", () => {
+  const level = parseLevel(MAP, 2);
+  it("maps world coordinates to cells and treats outside as solid", () => {
+    expect(solidAt(level, 3, 3)).toBe(false);
+    expect(solidAt(level, 1.9, 3)).toBe(true);
+    expect(solidAt(level, -0.1, 3)).toBe(true);
+    expect(solidAt(level, 3, 100)).toBe(true);
+  });
+});
+
+describe("LEVEL_1", () => {
+  it("parses and has one player spawn and at least one zombie", () => {
+    const level = parseLevel(LEVEL_1, 4);
+    expect(level.zombieSpawns.length).toBeGreaterThan(0);
+    expect(solidAt(level, level.playerSpawn.x, level.playerSpawn.z)).toBe(false);
+  });
+});
