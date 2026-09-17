@@ -7,17 +7,17 @@
     },
     "dd_arch_a": {
       "url": "assets/models/dd_arch_a.glb",
-      "bytes": 672932,
+      "bytes": 671784,
       "animations": []
     },
     "dd_arch_b": {
       "url": "assets/models/dd_arch_b.glb",
-      "bytes": 983284,
+      "bytes": 981640,
       "animations": []
     },
     "dd_arch_c": {
       "url": "assets/models/dd_arch_c.glb",
-      "bytes": 983144,
+      "bytes": 981580,
       "animations": []
     },
     "dd_arch_gate": {
@@ -32,7 +32,7 @@
     },
     "dd_candles": {
       "url": "assets/models/dd_candles.glb",
-      "bytes": 204996,
+      "bytes": 198592,
       "animations": []
     },
     "dd_ceiling": {
@@ -42,12 +42,12 @@
     },
     "dd_chain_a": {
       "url": "assets/models/dd_chain_a.glb",
-      "bytes": 638496,
+      "bytes": 452560,
       "animations": []
     },
     "dd_chain_c": {
       "url": "assets/models/dd_chain_c.glb",
-      "bytes": 634548,
+      "bytes": 453488,
       "animations": []
     },
     "dd_crate_a": {
@@ -107,22 +107,22 @@
     },
     "dd_wall_c": {
       "url": "assets/models/dd_wall_c.glb",
-      "bytes": 665860,
+      "bytes": 664856,
       "animations": []
     },
     "dd_wall_d": {
       "url": "assets/models/dd_wall_d.glb",
-      "bytes": 1256644,
+      "bytes": 1255716,
       "animations": []
     },
     "dd_wall_e": {
       "url": "assets/models/dd_wall_e.glb",
-      "bytes": 1265320,
+      "bytes": 1264152,
       "animations": []
     },
     "explorer": {
       "url": "assets/models/explorer.glb",
-      "bytes": 4601792,
+      "bytes": 2406888,
       "animations": [
         "HumanM@Rifle_Aim01",
         "HumanM@Rifle_Aim01_Shoot01",
@@ -132,7 +132,7 @@
     },
     "wpn_akm": {
       "url": "assets/models/wpn_akm.glb",
-      "bytes": 799900,
+      "bytes": 619632,
       "animations": []
     },
     "zombie1": {

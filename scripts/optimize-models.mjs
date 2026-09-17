@@ -8,18 +8,29 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS, EXTMeshoptCompression } from "@gltf-transform/extensions";
-import { dedup, prune, quantize, resample, textureCompress, weld } from "@gltf-transform/functions";
-import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer";
+import { dedup, prune, quantize, resample, simplify, textureCompress, weld } from "@gltf-transform/functions";
+import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
 import { buildManifest } from "./lib/manifest.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = join(root, "art-src/_glb");
 const outDir = join(root, "public/assets/models");
+
+// Models too dense for four players on the web: keep this share of their triangles.
+// error is how far (as a share of the model's size) the simplified surface may drift.
+const SIMPLIFY = {
+  explorer: { ratio: 0.25, error: 0.004 },
+  dd_chain_a: { ratio: 0.15, error: 0.05 },
+  dd_chain_c: { ratio: 0.15, error: 0.05 },
+  dd_candles: { ratio: 0.35, error: 0.01 },
+  wpn_akm: { ratio: 0.5, error: 0.002 },
+};
 mkdirSync(outDir, { recursive: true });
 
 await MeshoptDecoder.ready;
 await MeshoptEncoder.ready;
+await MeshoptSimplifier.ready;
 const io = new NodeIO()
   .registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ "meshopt.decoder": MeshoptDecoder, "meshopt.encoder": MeshoptEncoder });
@@ -29,9 +40,17 @@ for (const file of readdirSync(srcDir).filter((f) => f.endsWith(".glb"))) {
   const name = basename(file, ".glb");
   const doc = await io.read(join(srcDir, file));
   const skinned = doc.getRoot().listSkins().length > 0;
+  // The dungeon kit stores Unity shader blend masks in vertex colours; three.js would multiply
+  // the textures by them and draw the pieces nearly black.
+  if (name.startsWith("dd_")) {
+    for (const mesh of doc.getRoot().listMeshes()) {
+      for (const prim of mesh.listPrimitives()) prim.setAttribute("COLOR_0", null);
+    }
+  }
 
   const steps = [
     weld(),
+    ...(SIMPLIFY[name] ? [simplify({ simplifier: MeshoptSimplifier, ...SIMPLIFY[name] })] : []),
     dedup(),
     resample(),
     prune({ keepLeaves: skinned }),
