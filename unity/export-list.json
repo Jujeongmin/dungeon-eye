@@ -1,5 +1,4 @@
-{
-  "outDir": "../dungeon-eye/art-src/_glb",
+{
   "items": [
     { "name": "dd_floor_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_A.prefab" },
     { "name": "dd_wall_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A.prefab" },

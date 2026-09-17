@@ -1,7 +1,7 @@
 {
-  "name": "dungeon-eye-server",
+  "name": "traitor-hunt-server",
   "private": true,
-  "description": "Dungeon Eye Verse8 game server",
+  "description": "Traitor Hunt Verse8 game server",
   "scripts": {
     "build": "gameserver-node build",
     "test": "gameserver-node test",

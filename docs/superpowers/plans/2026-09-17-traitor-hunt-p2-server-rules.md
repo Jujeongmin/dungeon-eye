@@ -1,4 +1,4 @@
-# Dungeon Eye — Plan 2: Server Rules Implementation Plan
+# Traitor Hunt — Plan 2: Server Rules Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -1701,9 +1701,9 @@ git commit -m "feat: match outcome, per-player results and lifetime profile"
 
 ```json
 {
-  "name": "dungeon-eye-server",
+  "name": "traitor-hunt-server",
   "private": true,
-  "description": "Dungeon Eye Verse8 game server",
+  "description": "Traitor Hunt Verse8 game server",
   "scripts": {
     "build": "gameserver-node build",
     "test": "gameserver-node test",
@@ -2576,10 +2576,10 @@ git commit -m "feat: server match actions for possession, shooting, monsters and
 ### Task 8: 문서 정리와 전체 확인
 
 **Files:**
-- Modify: `docs/superpowers/specs/2026-09-17-dungeon-eye-design.md`
+- Modify: `docs/superpowers/specs/2026-09-17-traitor-hunt-design.md`
 - Modify: `README.md`
 
-- [ ] **Step 1: 기획서 갱신** — `docs/superpowers/specs/2026-09-17-dungeon-eye-design.md`
+- [ ] **Step 1: 기획서 갱신** — `docs/superpowers/specs/2026-09-17-traitor-hunt-design.md`
 
 "## 5. 미결정 사항" 섹션 제목과 본문을 아래로 교체:
 
@@ -2644,7 +2644,7 @@ Expected: vitest 95 PASS, 타입 에러 없음, 빌드 성공, 서버 테스트 
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add docs/superpowers/specs/2026-09-17-dungeon-eye-design.md README.md
+git add docs/superpowers/specs/2026-09-17-traitor-hunt-design.md README.md
 git commit -m "docs: record settled match rules and the long-term progression plan"
 ```
 

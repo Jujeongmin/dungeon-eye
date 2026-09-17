@@ -7,7 +7,7 @@ interface TitleScreenProps {
 export function TitleScreen({ onPractice, onOnline, onlineAvailable }: TitleScreenProps) {
   return (
     <div className="overlay title">
-      <h1>DUNGEON EYE</h1>
+      <h1>TRAITOR HUNT</h1>
       <p>넷 중 한 명은 배신자다. 몬스터에 빙의한 배신자를 찾아내고, 살아서 탈출하라.</p>
       <div className="buttons">
         <button type="button" onClick={onPractice}>연습 (봇 3명)</button>

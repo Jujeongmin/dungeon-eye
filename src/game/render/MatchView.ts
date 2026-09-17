@@ -24,7 +24,8 @@ export const LOOK_SENSITIVITY = 0.0022;
 export const KIT = { wallYawOffset: Math.PI / 2, wallInset: 0, ceilingYOffset: 0 };
 
 const KIT_MODELS = ["dd_floor_a", "dd_ceiling", "dd_wall_a", "dd_pillar_a", "dd_torch", "dd_barrel", "chest_closed"];
-export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1", "contract_killer"];
+// Players use a stand-in body until a character asset that fits (and takes costumes) is chosen.
+export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1"];
 
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED = ZOMBIE_SPEED * 1.3;
@@ -354,7 +355,7 @@ export class MatchView {
     for (const account of match.players) {
       let actor = this.players.get(account);
       if (!actor) {
-        actor = new RemotePlayerActor(account, library.instance("contract_killer"), library.get("contract_killer").animations);
+        actor = new RemotePlayerActor(account, null);
         this.scene.add(actor.object);
         this.players.set(account, actor);
       }

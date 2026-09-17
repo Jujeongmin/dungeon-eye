@@ -1,4 +1,4 @@
-# Dungeon Eye — Plan 1: Foundation (single-player FPS slice) Implementation Plan
+# Traitor Hunt — Plan 1: Foundation (single-player FPS slice) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -35,7 +35,7 @@ Plan 2 이후 문서는 Plan 1의 실제 에셋 내보내기 결과(본 이름, 
 ## File Structure
 
 ```
-dungeon-eye/
+traitor-hunt/
   package.json, vite.config.ts, vitest.config.ts, index.html
   tsconfig.json, tsconfig.app.json, tsconfig.node.json
   src/
@@ -83,7 +83,7 @@ dungeon-eye/
 
 ```json
 {
-  "name": "dungeon-eye",
+  "name": "traitor-hunt",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -221,7 +221,7 @@ export default defineConfig({
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0a09" />
-    <title>Dungeon Eye</title>
+    <title>Traitor Hunt</title>
   </head>
   <body>
     <div id="root"></div>
@@ -370,7 +370,7 @@ Expected: 다섯 개 시그니처가 모두 보인다. 이름이 다르면 Step 
 
 ```json
 {
-  "outDir": "../dungeon-eye/art-src/_glb",
+
   "items": [
     { "name": "dd_floor_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_A.prefab" },
     { "name": "dd_wall_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A.prefab" },
@@ -566,7 +566,7 @@ console.log(`exported ${list.items.length} models to ${outDir}`);
 Unity 에디터에서 `My project`를 닫은 상태로:
 
 Run: `npm run export-glb`
-Expected: 마지막 줄 `exported 12 models to C:\Users\anjsh\OneDrive\Desktop\dungeon-eye\art-src\_glb`
+Expected: 마지막 줄 `exported 12 models to <저장소 폴더>\art-src\_glb`
 
 - [ ] **Step 7: 실패 시 판단**
 

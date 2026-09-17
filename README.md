@@ -1,16 +1,18 @@
-# Dungeon Eye
+# Traitor Hunt
 
-4인 협동 3D FPS 던전 탈출 게임. 네 명 중 한 명은 몰래 정해진 배신자이고, 멀리 있는 몬스터에 빙의해 팀을 방해할 수 있다.
+4인 협동 3D FPS 탈출 게임. 봉인된 고대 지하 유적에 들어간 현대 무장 팀 네 명 중 한 명은 몰래 정해진 배신자이고, 멀리 있는 몬스터에 빙의해 팀을 방해할 수 있다.
 빙의한 몬스터가 입는 피해는 배신자 본인의 몸에도 전해진다. Verse8 배포 대상, Vite + React + TypeScript + Three.js.
 
-- 기획: [docs/superpowers/specs/2026-09-17-dungeon-eye-design.md](docs/superpowers/specs/2026-09-17-dungeon-eye-design.md)
+- 기획: [docs/superpowers/specs/2026-09-17-traitor-hunt-design.md](docs/superpowers/specs/2026-09-17-traitor-hunt-design.md)
 - 구현 계획: [docs/superpowers/plans/](docs/superpowers/plans/)
 - 에셋 출처와 라이선스: [docs/licenses/asset-provenance.md](docs/licenses/asset-provenance.md)
 
 ## 현재 상태
 
 Plan 1 완료: 혼자 던전 방을 1인칭으로 걸어다니며 AKM으로 좀비를 쏠 수 있다.
-Plan 2 완료: 서버가 4인 매치 규칙(방 찾기, 배신자 배정, 빙의, 연결 대미지, 사격, 탈출, 승패)과 판 결과 기록을 처리한다. 화면 연결은 Plan 3.
+Plan 2 완료: 서버가 4인 매치 규칙(방 찾기, 배신자 배정, 빙의, 연결 대미지, 사격, 탈출, 승패)과 판 결과 기록을 처리한다.
+Plan 3 진행 중: 타이틀에서 "연습"을 누르면 봇 3명과 한 판을 할 수 있다(서버 코드를 브라우저 안에서 그대로 돌린다). 온라인 매치는 Verse8 프로젝트 연결 뒤에 열린다.
+플레이어 캐릭터는 새 에셋을 고르는 중이라 지금은 임시 마네킹으로 보인다.
 
 ## 3D 모델은 이 저장소에 없다
 

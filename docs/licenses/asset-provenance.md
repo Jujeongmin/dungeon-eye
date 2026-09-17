@@ -34,7 +34,7 @@
 | GILD | FA: FPS Weapons Pack - Free | SIGN | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | ManNeko_Assets | Adventurer Blake | ManNeko | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | BodyGuards | Bodyguards | Batewar | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
-| Yurowm | Contract Killer | Jellymobile (패키지 안 제작자 이름 Yurowm) | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 2) | contract_killer (변환만, 화면엔 아직 없음) |
+| Yurowm | Contract Killer | Jellymobile (패키지 안 제작자 이름 Yurowm) | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 2) | contract_killer (변환만. 게임과 어울리지 않아 2026-09-17에 플레이어 모델에서 뺐다. 소총 애니메이션만 새 캐릭터에 재사용할 수 있다) |
 | Homeless_people | Free Scavenger | Paul N. | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | IdiaSoftware | Zombie Free Character Sounds (추정) | Idia Software LLC | **확인 필요** | **확인 필요** | **확인 필요** | 아직 없음 |
 

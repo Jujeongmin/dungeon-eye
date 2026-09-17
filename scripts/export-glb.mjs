@@ -7,7 +7,7 @@
  * that is already open.
  */
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NodeIO } from "@gltf-transform/core";
@@ -15,9 +15,12 @@ import { NodeIO } from "@gltf-transform/core";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const unityExe = process.env.UNITY_EXE ?? "C:/Program Files/Unity/Hub/Editor/6000.5.2f1/Editor/Unity.exe";
 const project = process.env.UNITY_PROJECT ?? resolve(root, "../My project");
-const listPath = join(root, "unity/export-list.json");
-const list = JSON.parse(readFileSync(listPath, "utf8"));
-const outDir = resolve(project, list.outDir);
+const list = JSON.parse(readFileSync(join(root, "unity/export-list.json"), "utf8"));
+const outDir = join(root, "art-src/_glb");
+// Unity gets an absolute output path, so the repo folder can have any name.
+const listPath = join(root, "art-src/export-list.json");
+mkdirSync(outDir, { recursive: true });
+writeFileSync(listPath, JSON.stringify({ ...list, outDir }));
 
 mkdirSync(join(project, "Assets/Editor"), { recursive: true });
 copyFileSync(join(root, "unity/ExportGlb.cs"), join(project, "Assets/Editor/ExportGlb.cs"));
