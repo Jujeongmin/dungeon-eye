@@ -4,7 +4,6 @@ const SHARDS = [{ x: 38, z: 6 }, { x: 6, z: 30 }];
 const GATE_1_SIDE = { x: 39.2, z: 18 };
 const ALTAR = { x: 82, z: 34 };
 const EXIT = { x: 54, z: 46 };
-const PLATES = [{ x: 10, z: 10 }, { x: 18, z: 10 }, { x: 10, z: 18 }, { x: 18, z: 18 }];
 
 describe("interact", () => {
   test("collects the shards and opens the first gate", async (server) => {
@@ -50,21 +49,46 @@ describe("devSetStage", () => {
 });
 
 describe("$roomTick", () => {
-  test("carries a plate vote once the voters have held it", async (server) => {
+  test("opens a vote when a gate opens and a majority decides it", async (server) => {
     const roomId = await fillRoom(server);
     const traitor = await findTraitor(server, roomId);
-    const plate = PLAYERS.indexOf(traitor);
-    const voters = PLAYERS.filter((p) => p !== traitor).slice(0, 2);
-    await placeAll(server, roomId, { [voters[0]]: PLATES[plate], [voters[1]]: PLATES[plate] });
+    const voters = PLAYERS.filter((p) => p !== traitor);
+    actAs(server, voters[0], roomId);
+    await server.devSetStage("devices");
     await server.$roomTick(500, roomId);
-    expect((await roomMatch(roomId)).vote.plate).toBe(plate);
+    const round = (await roomMatch(roomId)).vote.round;
+    expect(round.plates.length).toBe(5);
+
+    const plate = round.plates[PLAYERS.indexOf(traitor)];
+    const spots: Record<string, { x: number; z: number }> = {};
+    for (const v of voters) spots[v] = plate;
+    await placeAll(server, roomId, spots);
+    await server.$roomTick(500, roomId);
+    expect((await roomMatch(roomId)).vote.round.leading).toBe(PLAYERS.indexOf(traitor));
 
     actAs(server, voters[0], roomId);
-    await server.devAdvanceClock(5000);
+    await server.devAdvanceClock(3000);
     await server.$roomTick(500, roomId);
     const match = await roomMatch(roomId);
     expect(match.revealed).toBe(traitor);
     expect(match.vote.last.guilty).toBe(true);
+    expect(match.vote.round).toBeNull();
+  });
+
+  test("a lone vote decides when the time runs out", async (server) => {
+    const roomId = await fillRoom(server);
+    const [voter, accused] = PLAYERS;
+    actAs(server, voter, roomId);
+    await server.devSetStage("devices");
+    await server.$roomTick(500, roomId);
+    const plates = (await roomMatch(roomId)).vote.round.plates;
+    await placeAll(server, roomId, { [voter]: plates[1] });
+    actAs(server, voter, roomId);
+    await server.devAdvanceClock(30_000);
+    await server.$roomTick(500, roomId);
+    const match = await roomMatch(roomId);
+    expect(match.vote.last.accused).toBe(accused);
+    expect(match.bound[accused] > 0 || match.revealed === accused).toBe(true);
   });
 
   test("moves the seal only while someone guards the altar", async (server) => {

@@ -124,7 +124,7 @@ describe("stepVote", () => {
   });
 
   it("passes on no votes, a tie or a skip win", () => {
-    for (const who of [{}, { a: 1, b: 3 }, { a: 4, b: 4, d: 1 }]) {
+    for (const who of [{}, { a: 1, b: 3 }, { a: 4, b: 4, d: 1 }] as Record<string, number>[]) {
       const { match, secret, plates } = voting();
       stepVote(match, secret, standOn(plates, who), level, T + VOTE_DURATION_MS);
       expect(match.vote.last).toEqual({ accused: null, guilty: false, at: T + VOTE_DURATION_MS });

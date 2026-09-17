@@ -4,7 +4,7 @@ import { isActive, isBound } from "../match/lifecycle";
 import { BOSS_ID } from "../match/objectives";
 import type { MonsterState, Pose, Poses, PublicMatch, Vec2 } from "../match/types";
 import { distance } from "../match/view";
-import { tallyPlates, votingOpen } from "../match/vote";
+import { skipPlate, tallyPlates } from "../match/vote";
 import { wallDistance } from "../rules/combat";
 import { solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
 import { EYE_HEIGHT, WALK_SPEED, stepPlayer, type SolidTest } from "../rules/movement";
@@ -18,8 +18,10 @@ const AIM_TOLERANCE = 0.12;
 const INTERACT_EVERY_MS = 400;
 const REACH = INTERACT_RANGE + RANGE_SLACK - 0.3;
 const PAIN_SUSPECT_RADIUS = 3;
-const SUSPICION_MS = 25_000;
+// Votes only open at gates, so a scream stays suspicious for a while.
+const SUSPICION_MS = 180_000;
 const FOLLOW_PLATE_AFTER_MS = 1_500;
+const SKIP_AFTER_MS = 8_000;
 const GUARD_DISTANCE = 2.5;
 const PLATE_STAND = 0.5;
 
@@ -228,19 +230,19 @@ export class BotBrain {
     return this.solid(spot.x, spot.z) ? altar : spot;
   }
 
+  // During a vote: the suspect's plate, else a plate someone else holds, else skip after a while.
   private votePlate(match: PublicMatch, now: number, traitor: boolean): Vec2 | null {
     const me = this.client.account;
-    if (!votingOpen(match, now)) {
-      this.suspect = null;
+    const round = match.vote.round;
+    if (this.suspect && (now > this.suspect.until || !isActive(match, this.suspect.account))) this.suspect = null;
+    if (!round) {
       this.plateSeen.clear();
       return null;
     }
-    if (this.suspect && (now > this.suspect.until || !isActive(match, this.suspect.account))) this.suspect = null;
 
-    // Someone else holding a plate for a moment draws the others in, like answering a call.
     let follow: number | null = null;
-    for (const tally of tallyPlates(match, this.allPoses(), this.layout.plates)) {
-      if (!tally.voters.some((v) => v !== me)) {
+    for (const tally of tallyPlates(match, this.allPoses(), round.plates)) {
+      if (tally.accused === null || !tally.voters.some((v) => v !== me)) {
         this.plateSeen.delete(tally.plate);
         continue;
       }
@@ -249,10 +251,11 @@ export class BotBrain {
       if (follow === null && tally.accused !== me && now - since >= FOLLOW_PLATE_AFTER_MS) follow = tally.plate;
     }
     if (!traitor && this.suspect) {
-      const plate = this.layout.plates[match.players.indexOf(this.suspect.account)];
+      const plate = round.plates[match.players.indexOf(this.suspect.account)];
       if (plate) return plate;
     }
-    return follow === null ? null : (this.layout.plates[follow] ?? null);
+    if (follow !== null) return round.plates[follow] ?? null;
+    return now - round.startedAt >= SKIP_AFTER_MS ? (round.plates[skipPlate(match)] ?? null) : null;
   }
 
   private hearPain(e: PainEvent): void {

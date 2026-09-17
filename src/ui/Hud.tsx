@@ -1,5 +1,4 @@
-import { PLATE_HOLD_MS } from "../game/match/constants";
-import type { HudState, ObjectiveHud } from "../game/render/MatchView";
+import type { HudState, ObjectiveHud, VoteHud } from "../game/render/MatchView";
 
 const ROLE_LABEL = { adventurer: "모험가", traitor: "배신자" } as const;
 
@@ -55,6 +54,30 @@ function objectiveText(o: ObjectiveHud): string {
   }
 }
 
+function VotePanel({ vote }: { vote: VoteHud }) {
+  const deciding = vote.leading !== null && vote.decideInMs !== null;
+  return (
+    <div className="hud-vote">
+      <div className="hud-vote-title">
+        투표! {seconds(vote.remainingMs)}초 안에 발판에 서세요 · 과반 {vote.needed}명이면 바로 결정
+      </div>
+      <div className="hud-vote-plates">
+        {vote.plates.map((p, i) => (
+          <span key={i} className={`plate${p.skip ? " skip" : ""}${vote.mine === i ? " mine" : ""}${vote.leading === i ? " leading" : ""}`}>
+            {p.name} {p.votes}
+          </span>
+        ))}
+      </div>
+      {deciding && <div className="hud-vote-deciding">{vote.plates[vote.leading!].name} 결정까지 {seconds(vote.decideInMs!)}초</div>}
+    </div>
+  );
+}
+
+function voteResultText(name: string | null, guilty: boolean): string {
+  if (name === null) return "투표 결과: 아무도 지목되지 않았다";
+  return guilty ? `${name}은(는) 배신자였다! 빙의가 봉인됐다` : `${name}은(는) 무고했다 — 20초 동안 묶인다`;
+}
+
 function possessionText(hud: HudState): string {
   if (hud.sealed) return "정체가 드러나 빙의가 봉인됐다";
   if (hud.possession) return `빙의 중 ${clock(hud.possession.remainingMs)} · 클릭 공격 · R 해제`;
@@ -80,21 +103,9 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
       {hud.role === "traitor" && inside && <div className="hud-possess">{possessionText(hud)}</div>}
       {inside && hud.interactHint && <div className="hud-prompt">{hud.interactHint}</div>}
       {hud.nearExit && <div className="hud-prompt low">F: 탈출</div>}
-      {inside && hud.plate && hud.plateLockedMs === null && (
-        <div className="hud-vote">
-          {hud.plate.accused} 지목 발판 · {hud.plate.votes}/{hud.plate.needed}명
-          {hud.plate.votes >= hud.plate.needed && ` · ${seconds(Math.max(0, PLATE_HOLD_MS - hud.plate.heldMs))}초`}
-        </div>
-      )}
-      {inside && hud.plate && hud.plateLockedMs !== null && (
-        <div className="hud-vote dim">발판 잠김 {seconds(hud.plateLockedMs)}초</div>
-      )}
+      {hud.vote && <VotePanel vote={hud.vote} />}
       {vote && (
-        <div className={`hud-banner ${vote.guilty ? "guilty" : "innocent"}`}>
-          {vote.guilty
-            ? `${vote.name}은(는) 배신자였다! 빙의가 봉인됐다`
-            : `${vote.name}은(는) 무고했다 — 20초 동안 묶인다`}
-        </div>
+        <div className={`hud-banner ${vote.guilty ? "guilty" : "innocent"}`}>{voteResultText(vote.name, vote.guilty)}</div>
       )}
       {hud.boundMs !== null && <div className="hud-bound">묶여 있음 {seconds(hud.boundMs)}초</div>}
       {!hud.alive && <div className="hud-prompt">쓰러졌습니다 — 결과를 기다리는 중</div>}
@@ -103,7 +114,7 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
       {error && <div className="hud-error">{error}</div>}
       {inside && !hud.possession && <div className="crosshair" />}
       <div className="hint">
-        클릭해서 조작 · WASD 이동 · 클릭 사격 · E 상호작용 · F 탈출{hud.role === "traitor" ? " · Q 빙의 · R 해제" : ""} · 발판에 모여 배신자 지목
+        클릭해서 조작 · WASD 이동 · 클릭 사격 · E 상호작용 · F 탈출{hud.role === "traitor" ? " · Q 빙의 · R 해제" : ""} · 투표 때 발판에 서서 배신자 지목
       </div>
     </>
   );

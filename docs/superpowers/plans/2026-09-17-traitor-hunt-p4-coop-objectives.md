@@ -3333,3 +3333,22 @@ git push origin master
 - `npm run typecheck`, `npm test`, `npm run build`, `npm run server:test`, `npm run server:typecheck` 모두 통과.
 - 봇만으로 한 판을 돌리면 봉인 단계 이상까지 간다.
 - 브라우저 연습 모드에서 다섯 단계, 발판 투표, 묶임·공개 표시, 몬스터 공격 동작을 확인했다.
+
+---
+
+## 개정 (2026-09-17): 투표 방식 변경
+
+사용자 피드백으로 작업 4의 고정 발판 투표를 "문이 열릴 때마다 열리는 투표"로 바꿨다. 위 작업 4·5·6·7·8의 발판 관련 코드 블록은 옛 방식이다. 현재 코드는 아래를 따른다(기획서 11장).
+
+- `RUINS`에서 고정 발판(`R`)과 `LevelLayout.plates`를 없앴다.
+- `VoteState`는 `{ held, round, last }`이다. `round`에는 `startedAt`, `endsAt`, `plates`, `leading`, `since`가 있다. 발판 수는 사람 수 + 1이고, 마지막이 "건너뛰기"다. `VoteRecord.accused`가 `null`이면 넘어간 투표다.
+- `stepVote(match, secret, poses, level, now)`는 다음을 한다.
+  - 열린 문 수보다 연 투표가 적으면 새 투표를 연다. 발판 위치는 `placePlates`로 정한다: 살아 있는 사람들의 가운데에서 가까운 순으로 찾고, 발판이 모두 바닥에 들어가며 걸어서 갈 수 있는 곳이어야 한다.
+  - 과반(`votesNeeded`)이 `VOTE_DECIDE_HOLD_MS` 동안 서 있으면 바로 결정한다.
+  - `VOTE_DURATION_MS`가 지나면 가장 많은 표를 받은 발판으로 결정하고, 표가 없거나 동점이거나 건너뛰기가 이기면 넘어간다.
+  - 배신자가 드러나면 더는 투표를 열지 않는다.
+- `skipToStage`는 마지막으로 열린 문의 투표만 남긴다.
+- 상수 `PLATE_HOLD_MS`·`PLATE_LOCK_MS`를 없애고 `PLATE_RING_RADIUS`·`VOTE_DURATION_MS`·`VOTE_DECIDE_HOLD_MS`를 더했다.
+- 봇은 이렇게 투표한다: 의심 가는 사람의 발판 → 다른 사람이 1.5초 넘게 선 이름 발판 → 8초 뒤 건너뛰기. 비명에서 생긴 의심은 3분 동안 유지한다.
+- 화면에서는 발판 풀(사람 수 + 1개)이 투표 시작 시각 기준으로 위에서 떨어진다. 떨어지면 쿵 소리와 화면 흔들림이 난다. HUD는 `VoteHud`(남은 시간, 발판별 표, 내 발판, 과반 결정까지 남은 초)를 보여 준다.
+- 테스트: `tests/match/vote.test.ts`, `server/test/objectives.test.ts`의 투표 두 개, `tests/net/matchClient.test.ts`의 틱 빙의 해제.

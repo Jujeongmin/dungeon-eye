@@ -262,7 +262,7 @@ export class Server {
       const now = clock(match);
       const ctx: RoomContext = { roomId, account: "", match, secret, now, events: [] };
       const poses = await readPoses(roomId, match.players);
-      ctx.events.push(...stepVote(match, secret, poses, LEVEL.plates, now));
+      ctx.events.push(...stepVote(match, secret, poses, LEVEL, now));
       advanceObjectives(match, poses, LEVEL, now);
       ctx.events.push(...resolveOutcome(match, secret, now));
       // No $room outside a request: clients see the changes through the room state.

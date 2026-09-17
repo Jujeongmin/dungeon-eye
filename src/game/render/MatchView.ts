@@ -3,13 +3,13 @@ import type { ClientPhase, ClientState, MatchClient } from "../../net/matchClien
 import { ModelLibrary } from "../assets/ModelLibrary";
 import {
   AKM_FIRE_INTERVAL_MS, AKM_RANGE, DEVICE_COUNT, EXIT_RADIUS, MONSTER_STATS, POSSESS_RANGE, RANGE_SLACK,
-  SEAL_DURATION_MS, SEAL_RADIUS, SHARD_COUNT,
+  SEAL_DURATION_MS, SEAL_RADIUS, SHARD_COUNT, VOTE_DECIDE_HOLD_MS,
 } from "../match/constants";
 import { isActive, isBound } from "../match/lifecycle";
 import { BOSS_ID, interactableNear, type Interactable } from "../match/objectives";
 import type { MatchResult, MonsterKind, PlayerResult, Pose, Possession, PublicMatch, Stage } from "../match/types";
 import { distance } from "../match/view";
-import { tallyPlates } from "../match/vote";
+import { tallyPlates, votesNeeded } from "../match/vote";
 import { ZOMBIE_HEIGHT, ZOMBIE_RADIUS, resolveShot, type HitTarget, type Ray3 } from "../rules/combat";
 import { RUINS, TILE_SIZE, parseLevel, solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
 import { EYE_HEIGHT, applyLook, stepPlayer, type SolidTest } from "../rules/movement";
@@ -20,7 +20,7 @@ import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
 import { Viewmodel } from "./Viewmodel";
 import { costumeForSeat } from "./costumes";
 import { displayName } from "./names";
-import { playScream } from "./scream";
+import { playScream, playThud } from "./scream";
 
 export const LOOK_SENSITIVITY = 0.0022;
 
@@ -34,6 +34,8 @@ export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1", "explorer"];
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED_FACTOR = 1.3;
 const HUD_INTERVAL_MS = 100;
+const SHAKE_MS = 350;
+const SHAKE_SIZE = 0.06;
 // The boss is the zombie model, grown and reddened, until it gets its own model.
 const BOSS_LOOK: MonsterLook = { height: 3, tint: 0xd07a7a };
 const HIT_SHAPE: Record<MonsterKind, { radius: number; height: number }> = {
@@ -61,7 +63,15 @@ export interface ObjectiveHud {
   bossMaxHp: number;
 }
 
-export interface PlateHud { accused: string; votes: number; needed: number; heldMs: number }
+export interface VoteHud {
+  remainingMs: number;
+  needed: number;
+  plates: { name: string; votes: number; skip: boolean }[];
+  // The plate I stand on, and the one a majority holds.
+  mine: number | null;
+  leading: number | null;
+  decideInMs: number | null;
+}
 
 export interface HudState {
   phase: ClientPhase;
@@ -81,9 +91,9 @@ export interface HudState {
   results: PlayerResult[] | null;
   objective: ObjectiveHud | null;
   interactHint: string | null;
-  plate: PlateHud | null;
-  plateLockedMs: number | null;
-  lastVote: { name: string; guilty: boolean; ageMs: number } | null;
+  vote: VoteHud | null;
+  // name is null when the round was skipped or undecided.
+  lastVote: { name: string | null; guilty: boolean; ageMs: number } | null;
   boundMs: number | null;
   revealed: string | null;
   sealed: boolean;
@@ -143,6 +153,7 @@ export class MatchView {
   private frame = 0;
   private disposed = false;
   private offPain: (() => void) | null = null;
+  private shakeUntil = 0;
 
   constructor(
     private readonly container: HTMLElement,
@@ -172,6 +183,10 @@ export class MatchView {
     this.addLights();
     this.addExitMarker();
     this.props = new ObjectiveProps(this.scene, this.layout);
+    this.props.onLand = () => {
+      this.shakeUntil = performance.now() + SHAKE_MS;
+      playThud();
+    };
     this.viewmodel = new Viewmodel(this.camera, library.instance("wpn_akm"));
     this.offPain = this.client.onPain(() => {
       this.painAt = performance.now();
@@ -445,6 +460,12 @@ export class MatchView {
     const monster = possession ? match.monsters[possession.monsterId] : undefined;
     if (monster) this.camera.position.set(monster.x, MONSTER_EYE, monster.z);
     else this.camera.position.set(this.pose.x, EYE_HEIGHT, this.pose.z);
+    const shake = this.shakeUntil - performance.now();
+    if (shake > 0) {
+      const size = SHAKE_SIZE * (shake / SHAKE_MS);
+      this.camera.position.x += (Math.random() - 0.5) * size;
+      this.camera.position.y += (Math.random() - 0.5) * size;
+    }
     this.camera.rotation.set(this.pitch, this.yaw, 0, "YXZ");
   }
 
@@ -482,10 +503,10 @@ export class MatchView {
       results: match?.results ?? null,
       objective: match && playing ? this.objectiveHud(match, state, serverNow) : null,
       interactHint: usable ? INTERACT_LABEL[usable.kind] : null,
-      plate: match && playing && active && !possession ? this.plateHud(match, state, serverNow) : null,
-      plateLockedMs: match && playing && match.revealed === null && match.vote.lockedUntil > serverNow
-        ? match.vote.lockedUntil - serverNow : null,
-      lastVote: last ? { name: displayName(last.accused, me), guilty: last.guilty, ageMs: serverNow - last.at } : null,
+      vote: match && playing ? this.voteHud(match, state, serverNow) : null,
+      lastVote: last
+        ? { name: last.accused === null ? null : displayName(last.accused, me), guilty: last.guilty, ageMs: serverNow - last.at }
+        : null,
       boundMs: match && bound ? (match.bound[me] ?? serverNow) - serverNow : null,
       revealed: match?.revealed ? displayName(match.revealed, me) : null,
       sealed: !!match && match.revealed === me,
@@ -522,12 +543,23 @@ export class MatchView {
     };
   }
 
-  private plateHud(match: PublicMatch, state: ClientState, now: number): PlateHud | null {
+  private voteHud(match: PublicMatch, state: ClientState, now: number): VoteHud | null {
+    const round = match.vote.round;
+    if (!round) return null;
     const me = this.client.account;
-    const tally = tallyPlates(match, this.posesWithMine(state), this.layout.plates).find((t) => t.voters.includes(me));
-    if (!tally) return null;
-    const heldMs = match.vote.plate === tally.plate ? Math.max(0, now - match.vote.since) : 0;
-    return { accused: displayName(tally.accused, me), votes: tally.votes, needed: tally.needed, heldMs };
+    const tallies = tallyPlates(match, this.posesWithMine(state), round.plates);
+    return {
+      remainingMs: Math.max(0, round.endsAt - now),
+      needed: votesNeeded(match),
+      plates: tallies.map((t) => ({
+        name: t.accused === null ? "건너뛰기" : displayName(t.accused, me),
+        votes: t.votes,
+        skip: t.accused === null,
+      })),
+      mine: tallies.find((t) => t.voters.includes(me))?.plate ?? null,
+      leading: round.leading,
+      decideInMs: round.leading === null ? null : Math.max(0, round.since + VOTE_DECIDE_HOLD_MS - now),
+    };
   }
 
   private buildLevel(library: ModelLibrary): void {

@@ -171,14 +171,16 @@ describe("MatchClient", () => {
     expect(await traitor.possess("zombie-0")).toBeNull();
     expect(traitor.state.you.possession).not.toBeNull();
 
-    const voters = clients.filter((c) => c !== traitor).slice(0, 2);
-    const plate = [{ x: 10, z: 10 }, { x: 18, z: 10 }, { x: 10, z: 18 }, { x: 18, z: 18 }][
-      traitor.state.match!.players.indexOf(traitor.account)
-    ];
+    const voters = clients.filter((c) => c !== traitor);
+    await voters[0].setStage("devices");
+    await world.tickAll();
+    await settle(world);
+    const round = traitor.state.match!.vote.round!;
+    const plate = round.plates[traitor.state.match!.players.indexOf(traitor.account)];
     for (const v of voters) v.reportPose({ x: plate.x, z: plate.z, yaw: 0 });
     await settle(world);
     await world.tickAll();
-    await voters[0].advanceClock(5000);
+    await voters[0].advanceClock(3000);
     await world.tickAll();
     await settle(world);
     expect(traitor.state.match!.revealed).toBe(traitor.account);

@@ -23,3 +23,21 @@ export function playScream(): void {
   source.connect(filter).connect(gain).connect(ctx.destination);
   source.start();
 }
+
+// A low stone thud for the vote plates landing. Placeholder like the scream.
+export function playThud(): void {
+  if (typeof AudioContext === "undefined") return;
+  audio ??= new AudioContext();
+  const ctx = audio;
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(90, t);
+  osc.frequency.exponentialRampToValueAtTime(35, t + 0.35);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.9, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.5);
+}

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PLATE_RADIUS, SEAL_DURATION_MS, SEAL_RADIUS } from "../match/constants";
+import { MATCH_PLAYERS, PLATE_RADIUS, SEAL_DURATION_MS, SEAL_RADIUS } from "../match/constants";
 import { isActive } from "../match/lifecycle";
 import type { PublicMatch } from "../match/types";
 import type { LevelLayout } from "../rules/levelLayout";
@@ -8,12 +8,16 @@ const GATE_HEIGHT = 3.95;
 const SHARD_COLOR = 0x46d8ff;
 const DEVICE_ON = 0x5dff8a;
 const DEVICE_OFF = 0xff5a3a;
-const PLATE_IDLE = 0x3a6f86;
-const PLATE_HOLD = 0xffb35a;
-const PLATE_LOCKED = 0x2a2a2a;
-const PLATE_GUILTY = 0xff4d3d;
+const PLATE_IDLE = 0x3a9fc6;
+const PLATE_SKIP = 0xb8b0a0;
+const PLATE_LEADING = 0xffb35a;
+const PLATE_OFF = 0x2a2a2a;
+const PLATE_DROP_HEIGHT = 7;
+const PLATE_DROP_SECONDS = 0.45;
+const PLATE_THICKNESS = 0.22;
+const SKIP_LABEL = "건너뛰기";
 
-interface PlateView { material: THREE.MeshStandardMaterial; label: THREE.Sprite; name: string }
+interface PlateView { group: THREE.Group; rune: THREE.MeshStandardMaterial; label: THREE.Sprite; name: string }
 interface DeviceView { lamp: THREE.MeshStandardMaterial; light: THREE.PointLight }
 
 function setLabel(sprite: THREE.Sprite, text: string): void {
@@ -47,6 +51,10 @@ export class ObjectiveProps {
   private readonly altarGlow = new THREE.MeshStandardMaterial({ color: 0x3a2a18, emissive: 0xffa040, emissiveIntensity: 0 });
   private readonly guardRing: THREE.Mesh;
   private time = 0;
+  private roundKey: number | null = null;
+  private landed = false;
+  // Called once when a round's plates hit the ground.
+  onLand: (() => void) | null = null;
 
   constructor(scene: THREE.Scene, layout: LevelLayout) {
     const stone = new THREE.MeshStandardMaterial({ color: 0x4f463b, roughness: 0.95 });
@@ -114,17 +122,23 @@ export class ObjectiveProps {
       scene.add(block, top, this.guardRing);
     }
 
-    for (const at of layout.plates) {
-      const material = new THREE.MeshStandardMaterial({ color: 0x151515, emissive: PLATE_IDLE, emissiveIntensity: 0.8 });
-      const disc = new THREE.Mesh(new THREE.CircleGeometry(PLATE_RADIUS, 32), material);
-      disc.rotation.x = -Math.PI / 2;
-      disc.position.set(at.x, 0.02, at.z);
+    // One pool of plates, reused by every vote round: a name plate per seat plus skip.
+    for (let i = 0; i <= MATCH_PLAYERS; i++) {
+      const group = new THREE.Group();
+      const slab = new THREE.Mesh(new THREE.CylinderGeometry(PLATE_RADIUS, PLATE_RADIUS * 1.08, PLATE_THICKNESS, 32), stone);
+      slab.position.y = PLATE_THICKNESS / 2;
+      const rune = new THREE.MeshStandardMaterial({ color: 0x101010, emissive: PLATE_IDLE, emissiveIntensity: 1 });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(PLATE_RADIUS * 0.62, PLATE_RADIUS * 0.8, 32), rune);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = PLATE_THICKNESS + 0.01;
       const label = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true }));
-      label.position.set(at.x, 2.1, at.z);
+      label.position.y = 2.1;
       label.scale.set(2.4, 0.6, 1);
       label.visible = false;
-      scene.add(disc, label);
-      this.plates.push({ material, label, name: "" });
+      group.add(slab, ring, label);
+      group.visible = false;
+      scene.add(group);
+      this.plates.push({ group, rune, label, name: "" });
     }
   }
 
@@ -149,20 +163,45 @@ export class ObjectiveProps {
     this.altarGlow.emissiveIntensity = o.gates.includes(3) ? 2.3
       : o.stage === "seal" ? 0.3 + (o.seal.progressMs / SEAL_DURATION_MS) * 2 : 0.1;
 
-    const locked = match.revealed === null && match.vote.lockedUntil > now;
+    this.updatePlates(match, now, names);
+  }
+
+  private updatePlates(match: PublicMatch, now: number, names: string[]): void {
+    const round = match.vote.round;
+    if (!round) {
+      this.roundKey = null;
+      for (const plate of this.plates) plate.group.visible = false;
+      return;
+    }
+    if (this.roundKey !== round.startedAt) {
+      this.roundKey = round.startedAt;
+      this.landed = false;
+    }
+    // Plates fall from above and land together; everyone sees the same moment from server time.
+    const t = Math.min(1, Math.max(0, (now - round.startedAt) / 1000 / PLATE_DROP_SECONDS));
+    const height = PLATE_DROP_HEIGHT * (1 - t * t);
+    if (t >= 1 && !this.landed) {
+      this.landed = true;
+      // A late joiner should not hear an old landing.
+      if (now - round.startedAt < 1500) this.onLand?.();
+    }
     this.plates.forEach((plate, i) => {
-      const accused = match.players[i];
-      const name = accused ? (names[i] ?? "") : "";
+      const at = round.plates[i];
+      plate.group.visible = !!at;
+      if (!at) return;
+      plate.group.position.set(at.x, height, at.z);
+      const skip = i === match.players.length;
+      const accused = skip ? null : match.players[i];
+      const name = skip ? SKIP_LABEL : (names[i] ?? "");
       if (name !== plate.name) {
         plate.name = name;
         setLabel(plate.label, name);
       }
-      const holding = match.vote.plate === i;
-      const color = accused && match.revealed === accused ? PLATE_GUILTY
-        : !accused || !isActive(match, accused) || match.revealed !== null || locked ? PLATE_LOCKED
-          : holding ? PLATE_HOLD : PLATE_IDLE;
-      plate.material.emissive.setHex(color);
-      plate.material.emissiveIntensity = holding ? 1.2 + Math.sin(this.time * 8) * 0.4 : 0.8;
+      const leading = round.leading === i;
+      const color = accused && !isActive(match, accused) ? PLATE_OFF
+        : leading ? PLATE_LEADING : skip ? PLATE_SKIP : PLATE_IDLE;
+      plate.rune.emissive.setHex(color);
+      plate.rune.emissiveIntensity = leading ? 1.6 + Math.sin(this.time * 10) * 0.5 : 1;
     });
   }
 }
