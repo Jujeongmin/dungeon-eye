@@ -1,12 +1,16 @@
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
+import {
+  applyMonsterPoses, monsterAttack, reachExit, shootMonster, shootPlayer, type MonsterPoseUpdate,
+} from "../../src/game/match/damage";
 import { createLobby, joinLobby, leaveLobby, monsterSpawnsFor, startMatch } from "../../src/game/match/lifecycle";
 import { markLeft, resolveOutcome, settleResults } from "../../src/game/match/outcome";
+import { releasePossession, startPossession } from "../../src/game/match/possession";
 import { RuleViolation, type MatchEvent, type PublicMatch, type SecretMatch } from "../../src/game/match/types";
 import { privateView, type PrivateView } from "../../src/game/match/view";
 import { LEVEL_1, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
 import {
-  createSecret, deleteSecret, listLobbies, newRoomId, readMatch, readSecret, saveResults,
-  withMatchmakingLock, withRoomLock, writeMatch, writeSecret,
+  createSecret, deleteSecret, isPose, listLobbies, newRoomId, readMatch, readPose, readPoses, readSecret,
+  saveResults, withMatchmakingLock, withRoomLock, writeMatch, writePose, writeSecret,
 } from "./store";
 
 const LEVEL = parseLevel(LEVEL_1, TILE_SIZE);
@@ -155,6 +159,76 @@ export class Server {
       ctx.match.devClockOffsetMs += ms;
       ctx.now += ms;
       return ctx.now;
+    });
+  }
+
+  async reportPose(pose: unknown): Promise<void> {
+    const roomId = currentRoom();
+    if (!isPose(pose)) throw new RuleViolation("unavailable");
+    await writePose(roomId, $sender.account, pose, Date.now());
+  }
+
+  async reportMonsters(updates: unknown): Promise<void> {
+    if (!Array.isArray(updates) || updates.length > 32) throw new RuleViolation("unavailable");
+    const valid = updates.filter((u): u is MonsterPoseUpdate => isPose(u) && typeof (u as { id?: unknown }).id === "string");
+    await inRoom((ctx) => {
+      const secret = requireLive(ctx);
+      ctx.events.push(...applyMonsterPoses(ctx.match, secret, ctx.account, valid, ctx.now));
+    });
+  }
+
+  async possess(monsterId: unknown): Promise<PrivateView> {
+    const id = requireText(monsterId);
+    return inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const body = await readPose(ctx.roomId, ctx.account);
+      ctx.events.push(...startPossession(ctx.match, secret, ctx.account, id, body, ctx.now));
+      return privateView(ctx.match, secret, ctx.account);
+    });
+  }
+
+  async release(): Promise<PrivateView> {
+    return inRoom((ctx) => {
+      const secret = requireLive(ctx);
+      ctx.events.push(...releasePossession(ctx.match, secret, ctx.account, ctx.now));
+      return privateView(ctx.match, secret, ctx.account);
+    });
+  }
+
+  async fireAtMonster(monsterId: unknown): Promise<void> {
+    const id = requireText(monsterId);
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const poses = await readPoses(ctx.roomId, ctx.match.players);
+      ctx.events.push(...shootMonster(ctx.match, secret, ctx.account, id, poses[ctx.account] ?? null, poses, ctx.now));
+    });
+  }
+
+  async fireAtPlayer(target: unknown): Promise<void> {
+    const who = requireText(target);
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const from = await readPose(ctx.roomId, ctx.account);
+      const to = await readPose(ctx.roomId, who);
+      ctx.events.push(...shootPlayer(ctx.match, secret, ctx.account, who, from, to, ctx.now));
+    });
+  }
+
+  async attackWithMonster(monsterId: unknown, target: unknown): Promise<void> {
+    const id = requireText(monsterId);
+    const who = requireText(target);
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const to = await readPose(ctx.roomId, who);
+      ctx.events.push(...monsterAttack(ctx.match, secret, ctx.account, id, who, to, ctx.now));
+    });
+  }
+
+  async escape(): Promise<void> {
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const pose = await readPose(ctx.roomId, ctx.account);
+      ctx.events.push(...reachExit(ctx.match, secret, ctx.account, pose, LEVEL.exits, ctx.now));
     });
   }
 
