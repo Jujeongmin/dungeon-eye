@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "export-glb": "node scripts/export-glb.mjs",
     "models": "node scripts/optimize-models.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "server:install": "npm --prefix server install",
+    "server:test": "npm --prefix server test",
+    "server:build": "npm --prefix server run build",
+    "server:typecheck": "npm --prefix server run typecheck"
   },
   "dependencies": {
     "@agent8/gameserver": "^1.10.2",

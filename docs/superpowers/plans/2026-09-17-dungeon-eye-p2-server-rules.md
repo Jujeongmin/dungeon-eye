@@ -1670,6 +1670,7 @@ git commit -m "feat: match outcome, per-player results and lifetime profile"
 - 없는 컬렉션 항목을 읽으면 예외가 난다. 없는 방 사용자 상태는 `{}`다.
 - `$global.joinRoom()`은 같은 호출 안의 `$sender.roomId`를 바꾸지 않는다.
 - 각 테스트는 새 상태·새 서버로 시작한다.
+- **서버 테스트에서 `expect(...).not`을 쓰지 않는다.** 로컬 러너의 `.not`이 무한 호출로 "Maximum call stack size exceeded"를 낸다. `expect(조건).toBe(false)`로 쓴다. (vitest 쪽 `tests/`는 문제없음)
 
 **Files:**
 - Create: `server/package.json`, `server/tsconfig.json`
@@ -1949,7 +1950,8 @@ describe("matchmaking", () => {
     expect(snapshot.roomId).toBe(roomId);
     expect(snapshot.match.phase).toBe("playing");
     expect(snapshot.match.players).toEqual(PLAYERS);
-    expect(JSON.stringify(snapshot.match)).not.toContain("traitor");
+    // The local runner's `.not` recurses forever (gameserver-node 0.1.13), so assert on a boolean.
+    expect(JSON.stringify(snapshot.match).includes("traitor")).toBe(false);
     let traitors = 0;
     for (const account of PLAYERS) {
       actAs(server, account, roomId);

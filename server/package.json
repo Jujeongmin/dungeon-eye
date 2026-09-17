@@ -1,0 +1,14 @@
+{
+  "name": "dungeon-eye-server",
+  "private": true,
+  "description": "Dungeon Eye Verse8 game server",
+  "scripts": {
+    "build": "gameserver-node build",
+    "test": "gameserver-node test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@agent8/gameserver-node": "0.1.13",
+    "typescript": "~5.7.3"
+  }
+}
