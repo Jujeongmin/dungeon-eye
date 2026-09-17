@@ -1,0 +1,71 @@
+import type { MoveInput } from "../rules/movement";
+
+export class FpsInput {
+  firing = false;
+  private readonly keys = new Set<string>();
+  private lookX = 0;
+  private lookY = 0;
+
+  constructor(private readonly element: HTMLElement) {
+    element.addEventListener("click", this.onClick);
+    element.addEventListener("mousedown", this.onMouseDown);
+    window.addEventListener("mouseup", this.onMouseUp);
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
+    window.addEventListener("blur", this.onBlur);
+    document.addEventListener("mousemove", this.onMouseMove);
+  }
+
+  get locked(): boolean {
+    return document.pointerLockElement === this.element;
+  }
+
+  moveInput(): MoveInput {
+    const k = (code: string) => (this.keys.has(code) ? 1 : 0);
+    return { forward: k("KeyW") - k("KeyS"), strafe: k("KeyD") - k("KeyA") };
+  }
+
+  consumeLook(): { dx: number; dy: number } {
+    const look = { dx: this.lookX, dy: this.lookY };
+    this.lookX = 0;
+    this.lookY = 0;
+    return look;
+  }
+
+  dispose(): void {
+    this.element.removeEventListener("click", this.onClick);
+    this.element.removeEventListener("mousedown", this.onMouseDown);
+    window.removeEventListener("mouseup", this.onMouseUp);
+    window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("keyup", this.onKeyUp);
+    window.removeEventListener("blur", this.onBlur);
+    document.removeEventListener("mousemove", this.onMouseMove);
+    if (this.locked) document.exitPointerLock();
+  }
+
+  private onClick = () => {
+    // Browsers refuse the lock in some embeds (e.g. an iframe without allow="pointer-lock").
+    if (!this.locked) this.element.requestPointerLock()?.catch(() => {});
+  };
+  private onMouseDown = (e: MouseEvent) => {
+    if (e.button === 0 && this.locked) this.firing = true;
+  };
+  private onMouseUp = (e: MouseEvent) => {
+    if (e.button === 0) this.firing = false;
+  };
+  private onKeyDown = (e: KeyboardEvent) => {
+    this.keys.add(e.code);
+  };
+  private onKeyUp = (e: KeyboardEvent) => {
+    this.keys.delete(e.code);
+  };
+  private onBlur = () => {
+    this.keys.clear();
+    this.firing = false;
+  };
+  private onMouseMove = (e: MouseEvent) => {
+    if (!this.locked) return;
+    this.lookX += e.movementX;
+    this.lookY += e.movementY;
+  };
+}
