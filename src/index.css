@@ -122,7 +122,7 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .result-panel h2.adventurers { color: var(--frost); }
 .result-panel p { margin: 0; }
 .result-panel .brush-button { margin-top: 12px; }
-.result-panel .brush-button::after { display: none; }
+.result-panel .brush-button::before, .result-panel .brush-button::after { display: none; }
 
 /* HUD */
 .hud-top {
