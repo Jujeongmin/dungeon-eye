@@ -1,0 +1,71 @@
+# 에셋 출처와 라이선스
+
+확인일: 2026-09-17. 각 에셋의 Unity Asset Store 페이지에 표시된 라이선스 문구를 그대로 옮겼다.
+원본은 `art-src/`(저장소 제외). 게임에 들어가는 것은 `public/assets/models/`의 변환본뿐이다.
+
+## 라이선스가 허용하는 것
+
+"Standard Unity Asset Store EULA"는 에셋을 게임 같은 디지털 제품의 **구성 요소로 넣어** 배포하는 것을
+허용하고, Unity 엔진 사용을 조건으로 두지 않는다. 그래서 Three.js용 GLB로 변환해 게임에 넣는 것은 허용된다.
+금지되는 것은 에셋 파일 자체를 따로 배포·판매하는 것이다. 이 게임은 변환·압축된 모델을 게임 실행용으로만
+싣는다. 참고: https://unity.com/legal/as-terms
+
+페이지의 "License type: Extension Asset"은 라이선스를 **사용자(좌석)마다** 따로 받아야 한다는 뜻이다.
+지금은 한 명이 작업하므로 문제없고, 작업자가 늘면 각자 계정으로 받아야 한다.
+
+## 목록
+
+| art-src 폴더 | 에셋 | 퍼블리셔 | 라이선스 표기 | 가격 | Three.js 변환 사용 | 게임 사용처 |
+|---|---|---|---|---|---|---|
+| Decrepit Dungeon LITE | Decrepit Dungeon LITE | Prodigious Creations | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | dd_floor_a, dd_wall_a, dd_wall_a_corner, dd_ceiling, dd_pillar_a, dd_torch, dd_barrel, dd_crate_a |
+| Free Low Poly Dungeon Pack | Free Low Poly Dungeon Pack | Hyron | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Stylized Dungeon - Free Pack | Stylized Dungeon - Free Pack | JoJo Studios | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Laterns and candles | Modular Medieval Lanterns | Alexandr Voevodov | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Treasure chest closed | Treasure Chest - PBR | Thomas K. Kerff | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | chest_closed |
+| CemeteryPack | Stylized Cemetery Pack | Valentine Kurakin | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Zombie | Zombie | Pxltiger | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | zombie1 |
+| fantasySpider | Free Fantasy Spider | Kalamona | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| SiuniaevCharacters | GolemMonster | Siuniaev | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| PBRVelociraptor | PBR Velociraptors | Ferocious Industries | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| FourEvilDragonsHP | Dragon for Boss Monster : HP (옛 이름 Four Evil Dragons Pack HP) | Dungeon Mason | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 1) | 아직 없음 |
+| Weapons_ChamferZone | FPS AKM - Model & Textures | ChamferZone | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | wpn_akm |
+| DelthorGames | Free FPS Weapon - AKM | Delthor Games | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Reichsrevolver_M1879 | Reichsrevolver M-1879 | Nikolay Nagornov | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| GILD | FA: FPS Weapons Pack - Free | SIGN | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| ManNeko_Assets | Adventurer Blake | ManNeko | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| BodyGuards | Bodyguards | Batewar | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Yurowm | Contract Killer | Jellymobile (패키지 안 제작자 이름 Yurowm) | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 2) | contract_killer (변환만, 화면엔 아직 없음) |
+| Homeless_people | Free Scavenger | Paul N. | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| IdiaSoftware | Zombie Free Character Sounds (추정) | Idia Software LLC | **확인 필요** | **확인 필요** | **확인 필요** | 아직 없음 |
+
+페이지 주소:
+- Decrepit Dungeon LITE — https://assetstore.unity.com/packages/3d/environments/dungeons/decrepit-dungeon-lite-33936
+- Free Low Poly Dungeon Pack — https://assetstore.unity.com/packages/3d/environments/dungeons/free-low-poly-dungeon-pack-398788
+- Stylized Dungeon - Free Pack — https://assetstore.unity.com/packages/3d/environments/dungeons/stylized-dungeon-free-pack-178268
+- Modular Medieval Lanterns — https://assetstore.unity.com/packages/3d/environments/historic/modular-medieval-lanterns-85527
+- Treasure Chest - PBR — https://assetstore.unity.com/packages/3d/props/interior/treasure-chest-pbr-72498
+- Stylized Cemetery Pack — https://assetstore.unity.com/packages/3d/environments/stylized-cemetery-pack-56402
+- Zombie — https://assetstore.unity.com/packages/3d/characters/humanoids/zombie-30232
+- Free Fantasy Spider — https://assetstore.unity.com/packages/3d/characters/creatures/free-fantasy-spider-10104
+- GolemMonster — https://assetstore.unity.com/packages/3d/characters/creatures/golemmonster-33260
+- PBR Velociraptors — https://assetstore.unity.com/packages/3d/characters/animals/pbr-velociraptors-165201
+- Dragon for Boss Monster : HP — https://assetstore.unity.com/packages/3d/characters/creatures/dragon-for-boss-monster-hp-79398
+- FPS AKM - Model & Textures — https://assetstore.unity.com/packages/3d/fps-akm-model-textures-63654
+- Free FPS Weapon - AKM — https://assetstore.unity.com/packages/3d/props/guns/free-fps-weapon-akm-180663
+- Reichsrevolver M-1879 — https://assetstore.unity.com/packages/3d/props/guns/reichsrevolver-m-1879-63609
+- FA: FPS Weapons Pack - Free — https://assetstore.unity.com/packages/3d/props/guns/fa-fps-weapons-pack-free-254020
+- Adventurer Blake — https://assetstore.unity.com/packages/3d/characters/humanoids/adventurer-blake-158728
+- Bodyguards — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/bodyguards-31711
+- Contract Killer — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/contract-killer-29235
+- Free Scavenger — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/free-scavenger-261065
+
+## 확인이 더 필요한 것
+
+1. **FourEvilDragonsHP** — 받은 폴더에는 드래곤 4종(Nightmare, SoulEater, TerrorBringer, Usurper)이 들어 있는데,
+   현재 페이지 설명에는 4종 이야기가 없다. 검색상 이 페이지의 옛 이름이 "Four Evil Dragons Pack HP"라서 같은 상품으로
+   보지만, 사용하기 전에 Unity의 My Assets 목록에서 실제로 어느 상품으로 받았는지 한 번 확인한다.
+2. **Yurowm (Contract Killer)** — 페이지 퍼블리셔는 Jellymobile이고 패키지 안 폴더 이름은 Yurowm이다.
+   같은 제작자의 다른 이름으로 보이지만, My Assets 목록에서 받은 상품이 이 페이지인지 확인한다.
+3. **IdiaSoftware (좀비 사운드)** — 폴더 이름은 `ZombieFreeCharacterSounds`인데, 스토어에서 찾은 것은 유료
+   완전판 "Zombie Complete Character Sounds"(20달러, https://assetstore.unity.com/packages/audio/sound-fx/zombie-complete-character-sounds-141733)
+   뿐이다. 무료판을 어느 페이지에서 받았는지 My Assets에서 확인하기 전까지 게임에 넣지 않는다.
