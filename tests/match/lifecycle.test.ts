@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  MATCH_DURATION_MS, MATCH_PLAYERS, PLAYER_HP, POSSESS_FIRST_READY_MS, ZOMBIE_HP,
+  MATCH_DURATION_MS, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, ZOMBIE_HP,
 } from "../../src/game/match/constants";
 import {
-  createLobby, emptyStats, isActive, joinLobby, leaveLobby, monsterSpawnsFor, startMatch,
+  createLobby, createObjectives, emptyStats, isActive, isBound, joinLobby, leaveLobby, monsterSpawnsFor, newMonster,
+  startMatch,
 } from "../../src/game/match/lifecycle";
 import { RuleViolation } from "../../src/game/match/types";
 
@@ -100,5 +101,29 @@ describe("isActive / monsterSpawnsFor", () => {
       { id: "zombie-0", x: 1, z: 2 },
       { id: "zombie-1", x: 3, z: 4 },
     ]);
+  });
+});
+
+describe("plan 4 state", () => {
+  it("starts with the first stage, no votes and nobody bound", () => {
+    const match = fullLobby();
+    startMatch(match, 1000, () => 0, SPAWNS);
+    expect(match.objectives).toEqual(createObjectives());
+    expect(match.objectives).toEqual({
+      stage: "shards", shards: [false, false], devices: [0, 0], gates: [],
+      seal: { progressMs: 0, lastAt: null, waves: 0 },
+    });
+    expect(match.vote).toEqual({ plate: null, since: 0, lockedUntil: 0, last: null });
+    expect(match.bound).toEqual({});
+    expect(match.revealed).toBeNull();
+  });
+
+  it("makes monsters from their kind's numbers and knows who is bound", () => {
+    expect(newMonster("boss", 3, 4)).toMatchObject({ kind: "boss", x: 3, z: 4, hp: MONSTER_STATS.boss.hp, alive: true });
+    const match = fullLobby();
+    match.bound.a = 5000;
+    expect(isBound(match, "a", 4999)).toBe(true);
+    expect(isBound(match, "a", 5000)).toBe(false);
+    expect(isBound(match, "b", 0)).toBe(false);
   });
 });

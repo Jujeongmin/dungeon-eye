@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  AKM_DAMAGE, MONSTER_DEATH_BODY_DAMAGE, POSSESS_COOLDOWN_MS, POSSESS_DURATION_MS,
+  AKM_DAMAGE, MONSTER_DEATH_BODY_DAMAGE, MONSTER_STATS, POSSESS_COOLDOWN_MS, POSSESS_DURATION_MS,
   ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_INTERVAL_MS,
 } from "../../src/game/match/constants";
 import {
   applyMonsterPoses, monsterAttack, monsterAuthority, reachExit, shootMonster,
 } from "../../src/game/match/damage";
-import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
+import { createLobby, joinLobby, newMonster, startMatch } from "../../src/game/match/lifecycle";
 import { startPossession } from "../../src/game/match/possession";
 import type { Pose, Poses } from "../../src/game/match/types";
 
@@ -136,6 +136,12 @@ describe("shootMonster", () => {
       { type: "private", account: "c" },
     ]);
   });
+
+  it("does not let a bound player shoot", () => {
+    const { match, secret, poses } = playing();
+    match.bound.a = T + 1;
+    expect(() => shootMonster(match, secret, "a", "zombie-0", poses.a, poses, T)).toThrow("bound");
+  });
 });
 
 describe("monsterAttack", () => {
@@ -162,6 +168,14 @@ describe("monsterAttack", () => {
     expect(() => monsterAttack(match, secret, "a", "zombie-0", "b", poses.b, T)).toThrow("stunned");
     expect(() => monsterAttack(match, secret, "a", "zombie-0", "d", poses.d, T + 10)).toThrow("out_of_range");
   });
+
+  it("uses the boss's own reach and damage", () => {
+    const { match, secret } = playing();
+    match.monsters.boss = newMonster("boss", 10, 12.5);
+    monsterAttack(match, secret, "a", "boss", "b", at(10, 14), T);
+    expect(secret.hp.b).toBe(100 - MONSTER_STATS.boss.damage);
+    expect(match.monsters.boss.attackReadyAt).toBe(T + MONSTER_STATS.boss.intervalMs);
+  });
 });
 
 describe("reachExit", () => {
@@ -169,6 +183,7 @@ describe("reachExit", () => {
 
   it("lets an active player standing at an exit escape, once", () => {
     const { match, secret, poses } = playing();
+    match.objectives.stage = "exit";
     reachExit(match, secret, "a", poses.a, exits, T);
     expect(match.escaped).toEqual(["a"]);
     expect(() => reachExit(match, secret, "a", poses.a, exits, T)).toThrow("unavailable");
@@ -177,8 +192,19 @@ describe("reachExit", () => {
 
   it("ends the traitor's possession if the traitor escapes", () => {
     const { match, secret } = possessing();
+    match.objectives.stage = "exit";
     reachExit(match, secret, "c", at(1, 10), exits, T + 1);
     expect(match.escaped).toEqual(["c"]);
     expect(secret.possession).toBeNull();
+  });
+
+  it("keeps the exit shut until the last stage, and bound players inside", () => {
+    const { match, secret, poses } = playing();
+    expect(() => reachExit(match, secret, "b", poses.b, exits, T)).toThrow("not_at_exit");
+    expect(() => reachExit(match, secret, "a", poses.a, exits, T)).toThrow("exit_locked");
+    match.objectives.stage = "exit";
+    match.bound.a = T + 1;
+    expect(() => reachExit(match, secret, "a", poses.a, exits, T)).toThrow("bound");
+    expect(match.escaped).toEqual([]);
   });
 });

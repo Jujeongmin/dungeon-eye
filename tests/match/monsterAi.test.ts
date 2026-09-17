@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
+import { MONSTER_STATS } from "../../src/game/match/constants";
+import { createLobby, joinLobby, newMonster, startMatch } from "../../src/game/match/lifecycle";
 import { ZOMBIE_AGGRO_RANGE, ZOMBIE_SPEED, stepMonsterAi } from "../../src/game/match/monsterAi";
 import type { Pose, Poses } from "../../src/game/match/types";
 import { PLAYER_RADIUS } from "../../src/game/rules/movement";
@@ -74,5 +75,16 @@ describe("stepMonsterAi", () => {
     const step = stepMonsterAi(match, { b: at(10, 14) }, wallAhead, 0.1, 0, never);
     expect(step.updates[0].z).toBeGreaterThan(10);
     expect(step.updates[0].z + PLAYER_RADIUS).toBeLessThanOrEqual(10.5);
+  });
+});
+
+describe("monster kinds", () => {
+  it("moves the boss at its own speed and chases from farther away", () => {
+    const match = playing();
+    delete match.monsters["zombie-0"];
+    match.monsters.boss = newMonster("boss", 10, 10);
+    const poses: Poses = { a: at(10, 10 + MONSTER_STATS.boss.aggro - 1), b: null, c: null, d: null };
+    const step = stepMonsterAi(match, poses, open, 0.1, 0, never);
+    expect(step.updates[0].z).toBeCloseTo(10 + MONSTER_STATS.boss.speed * 0.1);
   });
 });

@@ -1,9 +1,24 @@
 import {
-  MATCH_DURATION_MS, MATCH_PLAYERS, PLAYER_HP, POSSESS_FIRST_READY_MS, ZOMBIE_HP,
+  DEVICE_COUNT, MATCH_DURATION_MS, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, SHARD_COUNT,
 } from "./constants";
 import {
-  RuleViolation, type MonsterSpawn, type PlayerStats, type PublicMatch, type SecretMatch, type Vec2,
+  RuleViolation, type MonsterKind, type MonsterSpawn, type MonsterState, type ObjectiveState, type PlayerStats,
+  type PublicMatch, type SecretMatch, type Vec2, type VoteState,
 } from "./types";
+
+export function createObjectives(): ObjectiveState {
+  return {
+    stage: "shards",
+    shards: Array.from({ length: SHARD_COUNT }, () => false),
+    devices: Array.from({ length: DEVICE_COUNT }, () => 0),
+    gates: [],
+    seal: { progressMs: 0, lastAt: null, waves: 0 },
+  };
+}
+
+export function createVote(): VoteState {
+  return { plate: null, since: 0, lockedUntil: 0, last: null };
+}
 
 export function createLobby(now: number): PublicMatch {
   return {
@@ -20,7 +35,18 @@ export function createLobby(now: number): PublicMatch {
     result: null,
     results: null,
     secretRef: null,
+    objectives: createObjectives(),
+    bound: {},
+    revealed: null,
+    vote: createVote(),
     devClockOffsetMs: 0,
+  };
+}
+
+export function newMonster(kind: MonsterKind, x: number, z: number): MonsterState {
+  return {
+    kind, x, z, yaw: 0, hp: MONSTER_STATS[kind].hp,
+    alive: true, possessed: false, stunnedUntil: 0, attackReadyAt: 0,
   };
 }
 
@@ -44,12 +70,11 @@ export function startMatch(match: PublicMatch, now: number, rng: () => number, s
   match.startedAt = now;
   match.endsAt = now + MATCH_DURATION_MS;
   match.monsters = {};
-  for (const spawn of spawns) {
-    match.monsters[spawn.id] = {
-      kind: "zombie", x: spawn.x, z: spawn.z, yaw: 0, hp: ZOMBIE_HP,
-      alive: true, possessed: false, stunnedUntil: 0, attackReadyAt: 0,
-    };
-  }
+  for (const spawn of spawns) match.monsters[spawn.id] = newMonster("zombie", spawn.x, spawn.z);
+  match.objectives = createObjectives();
+  match.bound = {};
+  match.revealed = null;
+  match.vote = createVote();
 
   const hp: Record<string, number> = {};
   const stats: Record<string, PlayerStats> = {};
@@ -69,6 +94,10 @@ export function emptyStats(): PlayerStats {
 
 export function isActive(match: PublicMatch, account: string): boolean {
   return match.players.includes(account) && !match.dead.includes(account) && !match.escaped.includes(account);
+}
+
+export function isBound(match: PublicMatch, account: string, now: number): boolean {
+  return (match.bound[account] ?? 0) > now;
 }
 
 export function monsterSpawnsFor(layout: { zombieSpawns: Vec2[] }): MonsterSpawn[] {

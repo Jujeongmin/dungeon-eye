@@ -29,11 +29,13 @@ export function startPossession(
   if (match.phase !== "playing") throw new RuleViolation("not_playing");
   if (account !== secret.traitor) throw new RuleViolation("not_traitor");
   if (!isActive(match, account)) throw new RuleViolation("unavailable");
+  if (match.revealed === account) throw new RuleViolation("sealed");
   if (secret.possession) throw new RuleViolation("already_possessing");
   if (now < secret.readyAt) throw new RuleViolation("not_ready");
   const monster = match.monsters[monsterId];
   if (!monster) throw new RuleViolation("no_monster");
   if (!monster.alive) throw new RuleViolation("monster_dead");
+  if (monster.kind === "boss") throw new RuleViolation("unavailable");
   if (!bodyPose || distance(bodyPose, monster) > POSSESS_RANGE) throw new RuleViolation("out_of_range");
 
   const endsAt = now + POSSESS_DURATION_MS;

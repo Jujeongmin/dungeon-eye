@@ -1,9 +1,8 @@
 import {
   AKM_DAMAGE, AKM_FIRE_INTERVAL_MS, AKM_RANGE, EXIT_RADIUS, LINK_DAMAGE_RATIO,
-  MONSTER_DEATH_BODY_DAMAGE, PAIN_RADIUS, RANGE_SLACK, ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_INTERVAL_MS,
-  ZOMBIE_ATTACK_RANGE,
+  MONSTER_DEATH_BODY_DAMAGE, MONSTER_STATS, PAIN_RADIUS, RANGE_SLACK,
 } from "./constants";
-import { isActive } from "./lifecycle";
+import { isActive, isBound } from "./lifecycle";
 import { endPossession, expirePossession } from "./possession";
 import {
   RuleViolation, type MatchEvent, type Pose, type Poses, type PublicMatch, type SecretMatch, type Vec2,
@@ -84,15 +83,16 @@ export function monsterAttack(
   if (now < monster.stunnedUntil) throw new RuleViolation("stunned");
   if (now < monster.attackReadyAt) throw new RuleViolation("too_fast");
   if (!isActive(match, target)) throw new RuleViolation("no_target");
-  if (!targetPose || distance(monster, targetPose) > ZOMBIE_ATTACK_RANGE + RANGE_SLACK) {
+  const stats = MONSTER_STATS[monster.kind];
+  if (!targetPose || distance(monster, targetPose) > stats.range + RANGE_SLACK) {
     throw new RuleViolation("out_of_range");
   }
 
-  monster.attackReadyAt = now + ZOMBIE_ATTACK_INTERVAL_MS;
+  monster.attackReadyAt = now + stats.intervalMs;
   if (monster.possessed) {
-    secret.stats[secret.traitor].possessedDamage += Math.min(ZOMBIE_ATTACK_DAMAGE, secret.hp[target] ?? 0);
+    secret.stats[secret.traitor].possessedDamage += Math.min(stats.damage, secret.hp[target] ?? 0);
   }
-  events.push(...damageBody(match, secret, target, ZOMBIE_ATTACK_DAMAGE, now));
+  events.push(...damageBody(match, secret, target, stats.damage, now));
   return events;
 }
 
@@ -103,6 +103,8 @@ export function reachExit(
   if (match.phase !== "playing") throw new RuleViolation("not_playing");
   if (!isActive(match, account)) throw new RuleViolation("unavailable");
   if (!pose || !exits.some((e) => distance(pose, e) <= EXIT_RADIUS)) throw new RuleViolation("not_at_exit");
+  if (match.objectives.stage !== "exit") throw new RuleViolation("exit_locked");
+  if (isBound(match, account, now)) throw new RuleViolation("bound");
   match.escaped.push(account);
   if (account === secret.traitor) events.push(...endPossession(match, secret, now));
   return events;
@@ -111,6 +113,7 @@ export function reachExit(
 function beginShot(match: PublicMatch, secret: SecretMatch, shooter: string, shooterPose: Pose | null, now: number): Pose {
   if (match.phase !== "playing") throw new RuleViolation("not_playing");
   if (!isActive(match, shooter)) throw new RuleViolation("unavailable");
+  if (isBound(match, shooter, now)) throw new RuleViolation("bound");
   // A possessing traitor's body stands frozen; it cannot shoot.
   if (secret.possession && secret.traitor === shooter) throw new RuleViolation("unavailable");
   const last = secret.lastShotAt[shooter];

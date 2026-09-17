@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { POSSESS_COOLDOWN_MS, POSSESS_DURATION_MS, POSSESS_FIRST_READY_MS } from "../../src/game/match/constants";
-import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
+import { createLobby, joinLobby, newMonster, startMatch } from "../../src/game/match/lifecycle";
 import {
   endPossession, expirePossession, releasePossession, startPossession,
 } from "../../src/game/match/possession";
@@ -115,5 +115,15 @@ describe("expirePossession / releasePossession / endPossession", () => {
     const { match, secret } = playing();
     expect(endPossession(match, secret, READY)).toEqual([]);
     expect(secret.readyAt).toBe(READY);
+  });
+});
+
+describe("plan 4 limits", () => {
+  it("refuses the boss and a traitor whose identity is out", () => {
+    const { match, secret } = playing();
+    match.monsters.boss = newMonster("boss", 6, 10);
+    expect(() => startPossession(match, secret, "c", "boss", NEAR, READY)).toThrow("unavailable");
+    match.revealed = "c";
+    expect(() => startPossession(match, secret, "c", "zombie-0", NEAR, READY)).toThrow("sealed");
   });
 });
