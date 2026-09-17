@@ -24,7 +24,8 @@ export const COSTUMES: readonly Costume[] = [
   {
     id: "raider",
     name: "복면 대원",
-    parts: ["Man_Balaclava_Mesh", "Man_Eyes_Mesh", "Man_Arms_Mesh", "Man_Jacket_Mesh", "Man_Pullover_For_Jacket_Mesh", "Man_Bag_Mesh", ...LEGS],
+    // The balaclava is a shell over the head; without the head its eye holes show the inside.
+    parts: ["Man_Balaclava_Mesh", ...HEAD, "Man_Arms_Mesh", "Man_Jacket_Mesh", "Man_Pullover_For_Jacket_Mesh", "Man_Bag_Mesh", ...LEGS],
   },
 ];
 

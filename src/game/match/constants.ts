@@ -1,6 +1,5 @@
 export const PROTOCOL_VERSION = 2;
 export const MATCH_PLAYERS = 4;
-export const MATCH_DURATION_MS = 20 * 60_000;
 export const PLAYER_HP = 100;
 
 export const POSSESS_FIRST_READY_MS = 60_000;

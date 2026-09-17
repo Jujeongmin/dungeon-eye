@@ -23,8 +23,6 @@ export function resolveOutcome(match: PublicMatch, secret: SecretMatch | null, n
     end = escaped.length > 0
       ? { winner: "adventurers", reason: "escaped", at: now }
       : { winner: "traitor", reason: "wiped", at: now };
-  } else if (match.endsAt !== null && now >= match.endsAt) {
-    end = { winner: "traitor", reason: "timeout", at: match.endsAt };
   }
   if (!end) return events;
 

@@ -6,7 +6,7 @@ import type { PlayerResult } from "../../src/game/match/types";
 function result(over: Partial<PlayerResult>): PlayerResult {
   return {
     account: "a", role: "adventurer", won: false, escaped: false, died: false,
-    reason: "timeout", durationMs: 1000, endedAt: 5000, stats: emptyStats(), ...over,
+    reason: "wiped", durationMs: 1000, endedAt: 5000, stats: emptyStats(), ...over,
   };
 }
 

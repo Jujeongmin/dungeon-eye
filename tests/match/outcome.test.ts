@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { MATCH_DURATION_MS, POSSESS_FIRST_READY_MS } from "../../src/game/match/constants";
+import { POSSESS_FIRST_READY_MS } from "../../src/game/match/constants";
 import { createLobby, joinLobby, startMatch } from "../../src/game/match/lifecycle";
 import { markLeft, resolveOutcome, settleResults } from "../../src/game/match/outcome";
 import { startPossession } from "../../src/game/match/possession";
 
 const START = 1000;
-const END = START + MATCH_DURATION_MS;
 
 // Traitor is "c"; adventurers are a, b, d.
 function playing() {
@@ -41,12 +40,10 @@ describe("resolveOutcome", () => {
     expect(match.result).toEqual({ winner: "traitor", reason: "wiped", traitor: "c" });
   });
 
-  it("gives the traitor the win on timeout, dated at the deadline", () => {
+  it("never ends a match just because time passes", () => {
     const { match, secret } = playing();
-    expect(resolveOutcome(match, secret, END - 1)).toEqual([]);
-    resolveOutcome(match, secret, END + 60_000);
-    expect(match.result).toEqual({ winner: "traitor", reason: "timeout", traitor: "c" });
-    expect(match.endedAt).toBe(END);
+    expect(resolveOutcome(match, secret, START + 24 * 3600_000)).toEqual([]);
+    expect(match.phase).toBe("playing");
   });
 
   it("ignores what happens to the traitor", () => {
@@ -68,9 +65,10 @@ describe("resolveOutcome", () => {
 
   it("does nothing without a secret or outside play", () => {
     const { match, secret } = playing();
-    expect(resolveOutcome(match, null, END + 1)).toEqual([]);
+    match.dead.push("a", "b", "d");
+    expect(resolveOutcome(match, null, START + 1)).toEqual([]);
     match.phase = "lobby";
-    expect(resolveOutcome(match, secret, END + 1)).toEqual([]);
+    expect(resolveOutcome(match, secret, START + 1)).toEqual([]);
   });
 });
 

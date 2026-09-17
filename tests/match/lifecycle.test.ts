@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  MATCH_DURATION_MS, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, ZOMBIE_HP,
+  MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, ZOMBIE_HP,
 } from "../../src/game/match/constants";
 import {
   createLobby, createObjectives, emptyStats, isActive, isBound, joinLobby, leaveLobby, monsterSpawnsFor, newMonster,
@@ -58,7 +58,7 @@ describe("startMatch", () => {
     expect(secret.traitor).toBe("c");
     expect(match.phase).toBe("playing");
     expect(match.startedAt).toBe(5000);
-    expect(match.endsAt).toBe(5000 + MATCH_DURATION_MS);
+    expect(match.endsAt).toBeNull();
     expect(secret.readyAt).toBe(5000 + POSSESS_FIRST_READY_MS);
     expect(secret.possession).toBeNull();
     expect(secret.hp).toEqual({ a: PLAYER_HP, b: PLAYER_HP, c: PLAYER_HP, d: PLAYER_HP });

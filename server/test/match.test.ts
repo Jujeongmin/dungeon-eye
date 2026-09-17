@@ -1,6 +1,6 @@
 import { PLAYERS, actAs, errorOf, fillRoom, findTraitor, roomMatch } from "./helpers";
 
-const MATCH_TIME = 20 * 60_000;
+const HOURS = 3 * 3600_000;
 
 describe("matchmaking", () => {
   test("reports the protocol version", async (server) => {
@@ -67,35 +67,38 @@ describe("matchmaking", () => {
 });
 
 describe("ending", () => {
-  test("gives the traitor the win on timeout and records every player once", async (server) => {
+  test("gives the traitor the win when no adventurer is left, and records every player once", async (server) => {
     const roomId = await fillRoom(server);
     const traitor = await findTraitor(server, roomId);
-    actAs(server, PLAYERS[0], roomId);
-    await server.devAdvanceClock(MATCH_TIME);
+    const adventurers = PLAYERS.filter((p) => p !== traitor);
+    for (const account of adventurers.slice(1)) {
+      actAs(server, account, roomId);
+      await server.leaveMatch();
+    }
+    actAs(server, adventurers[0], roomId);
+    await server.devAdvanceClock(HOURS);
     await server.syncMatch();
+    expect((await server.getMatchState()).match.phase).toBe("playing");
+    await server.leaveMatch();
+    actAs(server, traitor, roomId);
     const snapshot = await server.getMatchState();
     expect(snapshot.match.phase).toBe("ended");
-    expect(snapshot.match.result).toEqual({ winner: "traitor", reason: "timeout", traitor });
+    expect(snapshot.match.result).toEqual({ winner: "traitor", reason: "wiped", traitor });
     expect(snapshot.match.results).toHaveLength(4);
     expect(snapshot.match.secretRef).toBeNull();
     expect(await $global.countCollectionItems("match_results")).toBe(4);
     expect((await $global.getUserState(traitor)).profile).toMatchObject({ games: 1, wins: 1, traitorGames: 1, traitorWins: 1 });
-    const adventurer = PLAYERS.filter((p) => p !== traitor)[0];
-    expect((await $global.getUserState(adventurer)).profile).toMatchObject({ games: 1, wins: 0, adventurerGames: 1 });
+    expect((await $global.getUserState(adventurers[0])).profile).toMatchObject({ games: 1, wins: 0, adventurerGames: 1 });
   });
 
-  test("lets $roomTick end a match whose time is up", async (server) => {
+  test("has no time limit, even for $roomTick", async (server) => {
     const roomId = await fillRoom(server);
-    await server.$roomTick(500, roomId);
-    expect((await roomMatch(roomId)).phase).toBe("playing");
     const match = await roomMatch(roomId);
-    match.devClockOffsetMs = MATCH_TIME;
+    expect(match.endsAt).toBeNull();
+    match.devClockOffsetMs = HOURS;
     await $global.updateRoomState(roomId, { match });
     await server.$roomTick(500, roomId);
-    const ended = await roomMatch(roomId);
-    expect(ended.phase).toBe("ended");
-    expect(ended.result.reason).toBe("timeout");
-    expect(ended.results).toHaveLength(4);
+    expect((await roomMatch(roomId)).phase).toBe("playing");
   });
 
   test("counts players who leave mid-match as dead; no adventurer left means the traitor wins", async (server) => {

@@ -101,16 +101,18 @@ describe("LocalWorld", () => {
     expect(world.roomState(roomId).match.players).toEqual(PLAYERS);
   });
 
-  it("ticks rooms like $roomTick, ending a match whose time is up", async () => {
+  it("ticks rooms like $roomTick: no time limit, and a vote opens with a gate", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(1_000_000);
     const world = new LocalWorld(new Server());
     const roomId = await fill(world);
+    vi.setSystemTime(1_000_000 + 3 * 3600_000);
     await world.tickAll();
     expect(world.roomState(roomId).match.phase).toBe("playing");
-    vi.setSystemTime(1_000_000 + 21 * 60_000);
+    expect(world.roomState(roomId).match.vote.round).toBeNull();
+    await world.call(PLAYERS[0], roomId, "devSetStage", ["devices"]);
     await world.tickAll();
-    expect(world.roomState(roomId).match.phase).toBe("ended");
+    expect(world.roomState(roomId).match.vote.round.plates).toHaveLength(5);
   });
 
   it("drops a player from the room list when they leave", async () => {

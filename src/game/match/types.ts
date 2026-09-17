@@ -1,6 +1,6 @@
 export type Phase = "lobby" | "playing" | "ended";
 export type Winner = "adventurers" | "traitor";
-export type EndReason = "escaped" | "wiped" | "timeout";
+export type EndReason = "escaped" | "wiped";
 
 export interface Vec2 { x: number; z: number }
 export interface Pose extends Vec2 { yaw: number }

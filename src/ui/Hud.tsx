@@ -96,7 +96,7 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
       <div className="hud-top">
         {hud.role && <span className={`role role-${hud.role}`}>{ROLE_LABEL[hud.role]}</span>}
         {hud.hp !== null && <span className="hp">체력 {hud.hp}</span>}
-        {hud.timeLeftMs !== null && <span className="timer">{clock(hud.timeLeftMs)}</span>}
+        {hud.elapsedMs !== null && <span className="timer">{clock(hud.elapsedMs)}</span>}
       </div>
       {hud.objective && <div className="hud-objective">{objectiveText(hud.objective)}</div>}
       {hud.revealed && <div className="hud-revealed">배신자: {hud.revealed}</div>}

@@ -1,5 +1,5 @@
 import {
-  DEVICE_COUNT, MATCH_DURATION_MS, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, SHARD_COUNT,
+  DEVICE_COUNT, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, SHARD_COUNT,
 } from "./constants";
 import {
   RuleViolation, type MonsterKind, type MonsterSpawn, type MonsterState, type ObjectiveState, type PlayerStats,
@@ -68,7 +68,8 @@ export function startMatch(match: PublicMatch, now: number, rng: () => number, s
 
   match.phase = "playing";
   match.startedAt = now;
-  match.endsAt = now + MATCH_DURATION_MS;
+  // No time limit: a match ends when the adventurers are out or down.
+  match.endsAt = null;
   match.monsters = {};
   for (const spawn of spawns) match.monsters[spawn.id] = newMonster("zombie", spawn.x, spawn.z);
   match.objectives = createObjectives();

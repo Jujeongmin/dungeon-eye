@@ -13,7 +13,6 @@ export interface MatchScreenProps {
 const REASON_LABEL = {
   escaped: "살아남은 모험가가 모두 탈출했습니다",
   wiped: "모험가가 모두 쓰러졌습니다",
-  timeout: "시간이 다 되었습니다",
 } as const;
 
 export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {

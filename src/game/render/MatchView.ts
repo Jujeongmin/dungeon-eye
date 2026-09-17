@@ -77,7 +77,7 @@ export interface HudState {
   phase: ClientPhase;
   role: "adventurer" | "traitor" | null;
   hp: number | null;
-  timeLeftMs: number | null;
+  elapsedMs: number | null;
   alive: boolean;
   escaped: boolean;
   possession: { monsterId: string; remainingMs: number } | null;
@@ -488,7 +488,7 @@ export class MatchView {
       phase: state.phase,
       role: state.you.role,
       hp: state.you.hp,
-      timeLeftMs: match && playing && match.endsAt !== null ? Math.max(0, match.endsAt - serverNow) : null,
+      elapsedMs: match && playing && match.startedAt !== null ? Math.max(0, serverNow - match.startedAt) : null,
       alive: match ? !match.dead.includes(me) : true,
       escaped: match ? match.escaped.includes(me) : false,
       possession: possession ? { monsterId: possession.monsterId, remainingMs: Math.max(0, possession.endsAt - serverNow) } : null,
