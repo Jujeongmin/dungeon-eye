@@ -34,8 +34,11 @@
 | GILD | FA: FPS Weapons Pack - Free | SIGN | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | ManNeko_Assets | Adventurer Blake | ManNeko | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
 | BodyGuards | Bodyguards | Batewar | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
-| Yurowm | Contract Killer | Jellymobile (패키지 안 제작자 이름 Yurowm) | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 2) | contract_killer (변환만. 게임과 어울리지 않아 2026-09-17에 플레이어 모델에서 뺐다. 소총 애니메이션만 새 캐릭터에 재사용할 수 있다) |
+| Yurowm | Contract Killer | Jellymobile (패키지 안 제작자 이름 Yurowm) | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 (아래 참고 2) | 없음 (게임과 어울리지 않아 2026-09-17에 뺐다) |
 | Homeless_people | Free Scavenger | Paul N. | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | 아직 없음 |
+| Adventure_Character | Adventure Character | Maksim Bugrimov | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | explorer (플레이어, Man_Full 프리팹 — 코스튬은 부위 켜고 끄기) |
+| Kevin Iglesias | Human Soldier Animations FREE | Kevin Iglesias | Standard Unity Asset Store EULA / Extension Asset | 무료 | 가능 | explorer의 애니메이션(Rifle_Aim01, Rifle_Aim01_Shoot01, Run01_Forward, Death01) |
+| UMA, o3n | UMA 3 / o3n Male and Female UMA Races | UMA Steering Group / o3n | UMA: MIT (패키지 안 LICENSE.md), o3n: Standard Unity Asset Store EULA | 무료 | 가능 | 아직 없음 (검토 후 보류: 일상복 위주, 웹 내보내기 번거로움) |
 | IdiaSoftware | Zombie Free Character Sounds (추정) | Idia Software LLC | **확인 필요** | **확인 필요** | **확인 필요** | 아직 없음 |
 
 페이지 주소:
@@ -58,6 +61,10 @@
 - Bodyguards — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/bodyguards-31711
 - Contract Killer — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/contract-killer-29235
 - Free Scavenger — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/free-scavenger-261065
+- Adventure Character — https://assetstore.unity.com/packages/3d/characters/humanoids/humans/adventure-character-201384
+- Human Soldier Animations FREE — https://assetstore.unity.com/packages/3d/animations/human-soldier-animations-free-340690
+- UMA 3 — https://assetstore.unity.com/packages/3d/characters/uma-3-35611
+- o3n Male and Female UMA Races — https://assetstore.unity.com/packages/3d/characters/humanoids/o3n-male-and-female-uma-races-102187
 
 ## 확인이 더 필요한 것
 

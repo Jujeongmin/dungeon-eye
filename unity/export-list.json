@@ -1,17 +1,60 @@
-{
+{
   "items": [
-    { "name": "dd_floor_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_A.prefab" },
-    { "name": "dd_wall_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A.prefab" },
-    { "name": "dd_wall_a_corner", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A_Corner.prefab" },
-    { "name": "dd_ceiling", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Ceiling.prefab" },
-    { "name": "dd_pillar_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Pillars/Pillar_A.prefab" },
-    { "name": "dd_torch", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Torch.prefab" },
-    { "name": "dd_barrel", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Barrel.prefab" },
-    { "name": "dd_crate_a", "kind": "prefab", "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Crate_A.prefab" },
-    { "name": "chest_closed", "kind": "prefab", "asset": "Assets/Resources/Treasure chest closed/treasure_chest_closed.prefab" },
-    { "name": "wpn_akm", "kind": "fbx", "asset": "Assets/Resources/Weapons_ChamferZone/AKM/WPN_AKM.FBX", "material": "Assets/Resources/Weapons_ChamferZone/AKM/Materials/WPNM_AKM.mat" },
     {
-      "name": "zombie1", "kind": "character", "asset": "Assets/Resources/Zombie/Prefabs/Zombie1.prefab",
+      "name": "dd_floor_a",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Floors/Floor_A.prefab"
+    },
+    {
+      "name": "dd_wall_a",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A.prefab"
+    },
+    {
+      "name": "dd_wall_a_corner",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Wall_A_Corner.prefab"
+    },
+    {
+      "name": "dd_ceiling",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Walls/Ceiling.prefab"
+    },
+    {
+      "name": "dd_pillar_a",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Pillars/Pillar_A.prefab"
+    },
+    {
+      "name": "dd_torch",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Torch.prefab"
+    },
+    {
+      "name": "dd_barrel",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Barrel.prefab"
+    },
+    {
+      "name": "dd_crate_a",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Decrepit Dungeon LITE/Prefabs/Props/Crate_A.prefab"
+    },
+    {
+      "name": "chest_closed",
+      "kind": "prefab",
+      "asset": "Assets/Resources/Treasure chest closed/treasure_chest_closed.prefab"
+    },
+    {
+      "name": "wpn_akm",
+      "kind": "fbx",
+      "asset": "Assets/Resources/Weapons_ChamferZone/AKM/WPN_AKM.FBX",
+      "material": "Assets/Resources/Weapons_ChamferZone/AKM/Materials/WPNM_AKM.mat"
+    },
+    {
+      "name": "zombie1",
+      "kind": "character",
+      "asset": "Assets/Resources/Zombie/Prefabs/Zombie1.prefab",
       "clips": [
         "Assets/Resources/Zombie/Animations/Z_Idle.anim",
         "Assets/Resources/Zombie/Animations/Z_Walk_InPlace.anim",
@@ -20,12 +63,14 @@
       ]
     },
     {
-      "name": "contract_killer", "kind": "character", "asset": "Assets/Resources/Yurowm/Characters/Contract Killer/ContractKiller.prefab",
+      "name": "explorer",
+      "kind": "character",
+      "asset": "Assets/Resources/Adventure_Character/Prefabs/Man_Full.prefab",
       "clips": [
-        "Assets/Resources/Yurowm/Animations/Idle_Rifle.FBX",
-        "Assets/Resources/Yurowm/Animations/Run_Rifle.FBX",
-        "Assets/Resources/Yurowm/Animations/Walk_Rifle.FBX",
-        "Assets/Resources/Yurowm/Animations/Death_Rifle.FBX"
+        "Assets/Resources/Kevin Iglesias/Human Animations/Animations/Male/Combat/Rifle/HumanM@Rifle_Aim01.fbx",
+        "Assets/Resources/Kevin Iglesias/Human Animations/Animations/Male/Combat/Rifle/HumanM@Rifle_Aim01_Shoot01.fbx",
+        "Assets/Resources/Kevin Iglesias/Human Animations/Animations/Male/Movement/Run/HumanM@Run01_Forward.fbx",
+        "Assets/Resources/Kevin Iglesias/Human Animations/Animations/Male/Combat/HumanM@Death01.fbx"
       ]
     }
   ]

@@ -18,6 +18,7 @@ import { MonsterActor, type MonsterLook } from "./MonsterActor";
 import { ObjectiveProps } from "./ObjectiveProps";
 import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
 import { Viewmodel } from "./Viewmodel";
+import { costumeForSeat } from "./costumes";
 import { displayName } from "./names";
 import { playScream } from "./scream";
 
@@ -28,8 +29,7 @@ export const LOOK_SENSITIVITY = 0.0022;
 export const KIT = { wallYawOffset: Math.PI / 2, wallInset: 0, ceilingYOffset: 0 };
 
 const KIT_MODELS = ["dd_floor_a", "dd_ceiling", "dd_wall_a", "dd_pillar_a", "dd_torch", "dd_barrel", "chest_closed"];
-// Players use a stand-in body until a character asset that fits (and takes costumes) is chosen.
-export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1"];
+export const MATCH_MODELS = [...KIT_MODELS, "wpn_akm", "zombie1", "explorer"];
 
 const MONSTER_EYE = 1.5;
 const POSSESSED_SPEED_FACTOR = 1.3;
@@ -101,6 +101,7 @@ export interface MatchDebugHandle {
   hud(): HudState | null;
   state(): ClientState;
   layout(): LevelLayout;
+  scene(): THREE.Scene;
   fire(): Promise<string | null>;
   possessNearest(): Promise<string | null>;
   release(): Promise<string | null>;
@@ -200,6 +201,7 @@ export class MatchView {
       hud: () => this.lastHud,
       state: () => this.client.state,
       layout: () => this.layout,
+      scene: () => this.scene,
       fire: () => {
         const match = this.client.state.match;
         if (!match) return Promise.resolve("not_playing");
@@ -422,7 +424,12 @@ export class MatchView {
     for (const account of match.players) {
       let actor = this.players.get(account);
       if (!actor) {
-        actor = new RemotePlayerActor(account, null);
+        actor = new RemotePlayerActor(account, {
+          object: library.instance("explorer"),
+          clips: library.get("explorer").animations,
+          costume: costumeForSeat(match.players.indexOf(account)),
+          weapon: library.instance("wpn_akm"),
+        });
         this.scene.add(actor.object);
         this.players.set(account, actor);
       }

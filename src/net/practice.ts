@@ -29,6 +29,8 @@ export class PracticeSession {
   private readonly autopilot: BotBrain | null;
   private readonly bots: Seat[] = [];
   private tickTimer: ReturnType<typeof setInterval> | null = null;
+  // Development aid: frozen bots stand still so their look can be checked.
+  botsPaused = false;
   // StrictMode disposes the first session while its start() is still running.
   private disposed = false;
 
@@ -60,6 +62,7 @@ export class PracticeSession {
     this.humanDirector.update(dt, this.autopilot ? this.autopilot.pose : humanPose);
     this.human.tick();
     for (const seat of this.bots) {
+      if (this.botsPaused) continue;
       seat.brain.update(dt);
       seat.director.update(dt, seat.brain.pose);
       seat.client.tick();

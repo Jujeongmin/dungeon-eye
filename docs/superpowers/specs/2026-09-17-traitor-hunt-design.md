@@ -165,6 +165,10 @@
 **플레이어 캐릭터 결정 (2026-09-17)**: Contract Killer 캐릭터는 게임과 어울리지 않아 쓰지 않는다.
 나중에 코스튬(외형 교체)을 넣을 것이므로, 새 캐릭터는 부위별로 나뉜 모듈형이거나 같은 뼈대를 쓰는
 여러 외형이 있는 에셋으로 고른다. 정해질 때까지 다른 플레이어는 임시 마네킹으로 보인다.
+→ 2026-09-17 결정: **Adventure Character**(Maksim Bugrimov)를 쓴다. 17개 부위 메시를 모두 담은 `explorer` 모델 하나를 내보내고,
+코스튬은 보일 부위 목록으로 정한다(`src/game/render/costumes.ts`: 탐험가·수색대·복면 대원). 동작은 Human Soldier Animations FREE
+(Kevin Iglesias)의 소총 조준·달리기·쓰러짐을 입히고, 달릴 때는 다리만 달리기 동작을 쓰고 상체는 조준 자세를 유지한다.
+옷 색(상·하의 3색) 바꾸기는 코스튬 작업 때 더한다.
 Contract Killer 팩의 소총 애니메이션(Idle/Run/Death_Rifle)은 새 캐릭터에 재사용할 수 있다.
 
 파일 받으면 전달해줄 것 — 받는 대로 라이선스 조건 같이 확인하고 `gltf-transform` 변환

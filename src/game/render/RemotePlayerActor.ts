@@ -1,16 +1,26 @@
 import * as THREE from "three";
 import type { Pose } from "../match/types";
+import { isCostumePart, type Costume } from "./costumes";
+import { withUpperBodyPose } from "./playerAnimation";
 import { ActionBlender, clipByName, skinnedHeight } from "./skinned";
 
 const PLAYER_HEIGHT = 1.8;
 const FOLLOW_RATE = 12;
 const FALL_RATE = 6;
+const RIFLE_LENGTH = 0.75;
+// The rifle sits in the right hand and points through the left hand, like a two-handed grip.
+// How far along that line its centre is, from the right hand. Tuned by eye against the aim pose.
+const RIFLE_CENTER_AHEAD = 0.16;
+const UP = new THREE.Vector3(0, 1, 0);
 
 export type PlayerStatus = "active" | "dead" | "escaped";
 
 export interface PlayerModel {
   object: THREE.Object3D;
   clips: THREE.AnimationClip[];
+  costume: Costume;
+  // Held in the right hand; the model is expected to have a hand_r bone.
+  weapon: THREE.Object3D | null;
 }
 
 interface Animated {
@@ -21,7 +31,7 @@ interface Animated {
   blender: ActionBlender;
 }
 
-// Stand-in body until the player character asset is chosen (it must also support costumes).
+// Stand-in body for tests and for a model that failed to load.
 export function placeholderBody(): THREE.Object3D {
   const root = new THREE.Group();
   const cloth = new THREE.MeshStandardMaterial({ color: 0x4a5040, roughness: 0.9 });
@@ -42,6 +52,14 @@ export class RemotePlayerActor {
   private readonly animated: Animated | null;
   private readonly revealMark: THREE.Mesh;
   private readonly boundMark: THREE.Mesh;
+  private readonly weapon: THREE.Object3D | null;
+  private readonly hand: THREE.Object3D | null;
+  private readonly supportHand: THREE.Object3D | null;
+  private readonly handAt = new THREE.Vector3();
+  private readonly supportAt = new THREE.Vector3();
+  private readonly side = new THREE.Vector3();
+  private readonly lift = new THREE.Vector3();
+  private readonly basis = new THREE.Matrix4();
   private placed = false;
   private dead = false;
 
@@ -58,6 +76,10 @@ export class RemotePlayerActor {
     this.boundMark.visible = false;
     this.object.add(this.body, this.revealMark, this.boundMark);
     this.animated = model ? RemotePlayerActor.animate(model) : null;
+    this.hand = model?.object.getObjectByName("hand_r") ?? null;
+    this.supportHand = model?.object.getObjectByName("hand_l") ?? null;
+    this.weapon = model?.weapon && this.hand ? RemotePlayerActor.rifle(model.weapon) : null;
+    if (this.weapon) this.object.add(this.weapon);
     this.object.traverse((o) => {
       o.frustumCulled = false;
     });
@@ -70,15 +92,45 @@ export class RemotePlayerActor {
     this.boundMark.visible = bound && !this.dead;
   }
 
-  private static animate({ object, clips }: PlayerModel): Animated {
+  private static animate({ object, clips, costume }: PlayerModel): Animated {
+    object.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) o.visible = isCostumePart(costume, o.name);
+    });
     object.scale.setScalar(PLAYER_HEIGHT / skinnedHeight(object));
     const mixer = new THREE.AnimationMixer(object);
-    const idle = mixer.clipAction(clipByName(clips, "Idle_Rifle"));
-    const run = mixer.clipAction(clipByName(clips, "Run_Rifle"));
-    const death = mixer.clipAction(clipByName(clips, "Death_Rifle"));
+    const aim = clipByName(clips, "HumanM@Rifle_Aim01");
+    const idle = mixer.clipAction(aim);
+    const run = mixer.clipAction(withUpperBodyPose(clipByName(clips, "HumanM@Run01_Forward"), aim, "RunAim"));
+    const death = mixer.clipAction(clipByName(clips, "HumanM@Death01"));
     death.setLoop(THREE.LoopOnce, 1);
     death.clampWhenFinished = true;
     return { mixer, idle, run, death, blender: new ActionBlender(idle) };
+  }
+
+  private static rifle(weapon: THREE.Object3D): THREE.Object3D {
+    const size = new THREE.Box3().setFromObject(weapon).getSize(new THREE.Vector3());
+    weapon.scale.setScalar(RIFLE_LENGTH / Math.max(size.x, size.y, size.z));
+    weapon.traverse((o) => {
+      // Loose cartridges (cal_*) are reload-animation props.
+      if (o.name.startsWith("cal_")) o.visible = false;
+    });
+    return weapon;
+  }
+
+  private placeRifle(): void {
+    const { weapon, hand, supportHand } = this;
+    if (!weapon || !hand || !supportHand) return;
+    weapon.visible = !this.dead;
+    if (this.dead) return;
+    this.object.updateMatrixWorld(true);
+    this.object.worldToLocal(hand.getWorldPosition(this.handAt));
+    this.object.worldToLocal(supportHand.getWorldPosition(this.supportAt));
+    const aim = this.supportAt.sub(this.handAt).normalize();
+    // Keep the rifle upright (magazine down) while it points along the aim line.
+    this.side.crossVectors(UP, aim).normalize();
+    this.lift.crossVectors(aim, this.side);
+    weapon.quaternion.setFromRotationMatrix(this.basis.makeBasis(this.side, this.lift, aim));
+    weapon.position.copy(this.handAt).addScaledVector(aim, RIFLE_CENTER_AHEAD);
   }
 
   sync(pose: Pose | null, status: PlayerStatus, dt: number): void {
@@ -103,6 +155,7 @@ export class RemotePlayerActor {
       if (this.dead) a.blender.fadeTo(a.death, 0.1);
       else a.blender.fadeTo(Math.hypot(dx, dz) > 0.03 ? a.run : a.idle);
       a.mixer.update(dt);
+      this.placeRifle();
     } else if (this.dead) {
       // The stand-in has no death clip, so it tips over backwards.
       const fall = this.body.rotation;

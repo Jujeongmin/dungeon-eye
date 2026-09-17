@@ -1,7 +1,8 @@
 /**
  * Exports the models listed in unity/export-list.json to art-src/_glb.
  *
- *   node scripts/export-glb.mjs
+ *   node scripts/export-glb.mjs            (every model)
+ *   node scripts/export-glb.mjs explorer   (only the named models)
  *
  * Close "My project" in the Unity Editor first: batchmode refuses a project
  * that is already open.
@@ -15,7 +16,10 @@ import { NodeIO } from "@gltf-transform/core";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const unityExe = process.env.UNITY_EXE ?? "C:/Program Files/Unity/Hub/Editor/6000.5.2f1/Editor/Unity.exe";
 const project = process.env.UNITY_PROJECT ?? resolve(root, "../My project");
-const list = JSON.parse(readFileSync(join(root, "unity/export-list.json"), "utf8"));
+const full = JSON.parse(readFileSync(join(root, "unity/export-list.json"), "utf8"));
+const only = process.argv.slice(2);
+const list = only.length > 0 ? { ...full, items: full.items.filter((i) => only.includes(i.name)) } : full;
+if (list.items.length === 0) throw new Error(`no models named ${only.join(", ")}`);
 const outDir = join(root, "art-src/_glb");
 // Unity gets an absolute output path, so the repo folder can have any name.
 const listPath = join(root, "art-src/export-list.json");

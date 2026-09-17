@@ -5,16 +5,6 @@
       "bytes": 477632,
       "animations": []
     },
-    "contract_killer": {
-      "url": "assets/models/contract_killer.glb",
-      "bytes": 244980,
-      "animations": [
-        "Idle_Rifle",
-        "Run_Rifle",
-        "Walk_Rifle",
-        "Death_Rifle"
-      ]
-    },
     "dd_barrel": {
       "url": "assets/models/dd_barrel.glb",
       "bytes": 1222960,
@@ -54,6 +44,16 @@
       "url": "assets/models/dd_wall_a_corner.glb",
       "bytes": 348948,
       "animations": []
+    },
+    "explorer": {
+      "url": "assets/models/explorer.glb",
+      "bytes": 4601792,
+      "animations": [
+        "HumanM@Rifle_Aim01",
+        "HumanM@Rifle_Aim01_Shoot01",
+        "HumanM@Run01_Forward",
+        "HumanM@Death01"
+      ]
     },
     "wpn_akm": {
       "url": "assets/models/wpn_akm.glb",

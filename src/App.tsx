@@ -33,6 +33,7 @@ function PracticeMatch({ onExit }: { onExit: () => void }) {
 
   useEffect(() => {
     const next = new PracticeSession(layout);
+    if (import.meta.env.DEV) (window as unknown as { __practice?: PracticeSession }).__practice = next;
     let live = true;
     void next.start().then(() => {
       if (live) setSession(next);
