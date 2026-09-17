@@ -1,5 +1,8 @@
+import type { SolidTest } from "./movement";
+
 export interface Placement { model: string; x: number; y: number; z: number; rotationY: number }
 export interface Point2 { x: number; z: number }
+export interface Gate { n: number; x: number; z: number }
 export interface LevelLayout {
   tileSize: number;
   cols: number;
@@ -9,6 +12,13 @@ export interface LevelLayout {
   playerSpawn: Point2;
   zombieSpawns: Point2[];
   exits: Point2[];
+  shards: Point2[];
+  devices: Point2[];
+  altar: Point2 | null;
+  waveSpawns: Point2[];
+  bossSpawn: Point2 | null;
+  plates: Point2[];
+  gates: Gate[];
 }
 
 export const TILE_SIZE = 4;
@@ -25,8 +35,26 @@ export const LEVEL_1: string[] = [
   "###########",
 ];
 
+// Plan 4 map. S rune shard, R vote plate, 1-3 gates, D device, A altar, W wave spawn, K boss.
+export const RUINS: string[] = [
+  "#########################",
+  "#P.......S#.............#",
+  "#.R.R.....T.D.........D.#",
+  "#.......Z.#......Z......#",
+  "#.R.R.....1.....#########",
+  "#B........#..Z..2.......#",
+  "###.#######.....#.W...W.#",
+  "#S..#######T###T#.......#",
+  "#...########...#T...A...#",
+  "############.K..#.......#",
+  "###########.....3.W...W.#",
+  "###########..E..#......C#",
+  "#########################",
+];
+
 const PROP: Record<string, string> = { B: "dd_barrel", C: "chest_closed" };
-const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C", "E"]);
+const GATE_SYMBOLS = new Set(["1", "2", "3"]);
+const FLOOR_SYMBOLS = new Set([".", "P", "Z", "B", "C", "E", "S", "D", "A", "W", "K", "R", ...GATE_SYMBOLS]);
 const SOLID_SYMBOLS = new Set(["#", "T"]);
 
 // Neighbour offset -> rotation that turns a panel's +z toward the floor cell.
@@ -53,6 +81,14 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
   const placements: Placement[] = [];
   const zombieSpawns: Point2[] = [];
   const exits: Point2[] = [];
+  const shards: Point2[] = [];
+  const devices: Point2[] = [];
+  const waveSpawns: Point2[] = [];
+  const plates: Point2[] = [];
+  const gates: Gate[] = [];
+  // Asserted so TS keeps the wide types; they are assigned inside the callbacks below.
+  let altar = null as Point2 | null;
+  let bossSpawn = null as Point2 | null;
   // Asserted so TS keeps the wide type; it is assigned inside the callbacks below.
   let playerSpawn = null as Point2 | null;
 
@@ -82,11 +118,22 @@ export function parseLevel(rows: string[], tileSize: number): LevelLayout {
       if (ch === "P") playerSpawn = { x, z };
       if (ch === "Z") zombieSpawns.push({ x, z });
       if (ch === "E") exits.push({ x, z });
+      if (ch === "S") shards.push({ x, z });
+      if (ch === "D") devices.push({ x, z });
+      if (ch === "A") altar = { x, z };
+      if (ch === "W") waveSpawns.push({ x, z });
+      if (ch === "K") bossSpawn = { x, z };
+      if (ch === "R") plates.push({ x, z });
+      if (GATE_SYMBOLS.has(ch)) gates.push({ n: Number(ch), x, z });
     });
   });
 
   if (!playerSpawn) throw new Error("level has no player spawn (P)");
-  return { tileSize, cols, rows: rows.length, solid, placements, playerSpawn, zombieSpawns, exits };
+  gates.sort((a, b) => a.n - b.n);
+  return {
+    tileSize, cols, rows: rows.length, solid, placements, playerSpawn, zombieSpawns, exits,
+    shards, devices, altar, waveSpawns, bossSpawn, plates, gates,
+  };
 }
 
 export function solidAt(layout: LevelLayout, x: number, z: number): boolean {
@@ -94,6 +141,15 @@ export function solidAt(layout: LevelLayout, x: number, z: number): boolean {
   const r = Math.floor(z / layout.tileSize);
   if (r < 0 || r >= layout.rows || c < 0 || c >= layout.cols) return true;
   return layout.solid[r][c];
+}
+
+// Gate cells are floor in the layout; a closed gate blocks its whole cell like a wall.
+export function solidWith(layout: LevelLayout, openGates: readonly number[]): SolidTest {
+  const half = layout.tileSize / 2;
+  const closed = layout.gates.filter((g) => !openGates.includes(g.n));
+  return (x, z) =>
+    solidAt(layout, x, z)
+    || closed.some((g) => x >= g.x - half && x < g.x + half && z >= g.z - half && z < g.z + half);
 }
 
 const SPAWN_OFFSETS: Point2[] = [

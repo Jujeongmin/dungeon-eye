@@ -1,4 +1,5 @@
 import { solidAt, type LevelLayout, type Point2 } from "./levelLayout";
+import type { SolidTest } from "./movement";
 
 export interface Cell { col: number; row: number }
 
@@ -12,12 +13,15 @@ export function cellCenter(layout: LevelLayout, cell: Cell): Point2 {
 
 const STEPS: Cell[] = [{ col: 1, row: 0 }, { col: -1, row: 0 }, { col: 0, row: 1 }, { col: 0, row: -1 }];
 
-export function findPath(layout: LevelLayout, from: Point2, to: Point2): Point2[] | null {
+export function findPath(
+  layout: LevelLayout, from: Point2, to: Point2,
+  isSolid: SolidTest = (x, z) => solidAt(layout, x, z),
+): Point2[] | null {
   const start = cellOf(layout, from);
   const goal = cellOf(layout, to);
   const walkable = (c: Cell) => {
     const p = cellCenter(layout, c);
-    return !solidAt(layout, p.x, p.z);
+    return !isSolid(p.x, p.z);
   };
   if (!walkable(start) || !walkable(goal)) return null;
 

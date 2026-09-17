@@ -259,8 +259,8 @@ export function solidWith(layout: LevelLayout, openGates: readonly number[]): So
 `src/game/rules/pathfinding.ts`:
 
 ```ts
-import type { SolidTest } from "./movement";
 import { solidAt, type LevelLayout, type Point2 } from "./levelLayout";
+import type { SolidTest } from "./movement";
 ```
 
 ```ts
