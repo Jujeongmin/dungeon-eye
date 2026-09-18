@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /**
  * A localStorage that never throws.
  *
@@ -55,3 +56,5 @@ if (typeof window !== "undefined" && !storageWorks()) {
     // The property is locked; our own callers still guard their storage use.
   }
 }
+
+export {};

@@ -20,6 +20,7 @@
   "include": [
     "vite.config.ts",
     "vitest.config.ts",
+    "vite-plugins",
     "tests",
     "src/net/local/agent8-globals.d.ts"
   ]
