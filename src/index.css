@@ -14,6 +14,10 @@
 
 html, body { margin: 0; height: 100%; background: #000; color: var(--ink); font-family: var(--font-body); }
 body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* A game screen: dragging must not select text or lift images. Text fields stay editable. */
+body { user-select: none; -webkit-user-select: none; }
+img { -webkit-user-drag: none; }
+input, textarea { user-select: text; -webkit-user-select: text; }
 /* The game is a fixed 16:9 landscape stage; leftover window space shows as black bars. */
 #root {
   position: relative;
@@ -323,6 +327,21 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .friend-list li.offline .friend-name { color: var(--ink-dim); }
 .friend-status { font-size: 12px; color: var(--ink-dim); }
 .presence { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: rgba(242, 232, 213, 0.25); flex: none; }
+.party-invite {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  white-space: nowrap;
+  animation: friends-in 0.18s ease-out;
+}
+.party-invite b { color: var(--ember); font-weight: 700; }
+.party-leader { font-size: 11px; color: var(--ember); margin-left: 4px; }
+.party-actions { display: flex; justify-content: flex-end; }
 .friend-list li.online .presence { background: #7fd36a; box-shadow: 0 0 6px rgba(127, 211, 106, 0.7); }
 .badge {
   display: inline-block;
