@@ -1,4 +1,4 @@
-import type { PartyView } from "../game/account/party";
+import type { Activity, PartyView } from "../game/account/party";
 import { COSTUMES, type Costume } from "../game/render/costumes";
 import { errorCode } from "./matchClient";
 import type { MatchTransport } from "./transport";
@@ -9,6 +9,7 @@ const PROBLEMS: Record<string, string> = {
   already_in_party: "이미 같은 파티예요",
   no_invite: "초대가 만료되었어요",
   not_leader: "파티장만 할 수 있어요",
+  party_busy: "파티원이 아직 게임 중이에요",
 };
 
 export function partyProblem(error: unknown): string {
@@ -22,12 +23,13 @@ export class PartyClient {
   private unsubscribe: (() => void) | null = null;
   private seen = "";
   private disposed = false;
+  private activity: Activity = "menu";
 
   constructor(private readonly transport: MatchTransport) {}
 
   async start(): Promise<void> {
     this.unsubscribe = this.transport.subscribeMyState((state) => {
-      const seen = JSON.stringify([state.party ?? null, state.partyInvites ?? null]);
+      const seen = JSON.stringify([state.party ?? null, state.partyInvites ?? null, state.partyMatch ?? null]);
       if (seen === this.seen) return;
       this.seen = seen;
       void this.sync().catch(() => undefined);
@@ -36,7 +38,7 @@ export class PartyClient {
   }
 
   async sync(): Promise<void> {
-    const view = await this.transport.call<PartyView>("syncParty");
+    const view = await this.transport.call<PartyView>("syncParty", [this.activity]);
     if (this.disposed) return;
     this.view = view;
     for (const listener of this.listeners) listener(view);
@@ -47,6 +49,13 @@ export class PartyClient {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  // Tells the party whether you are at the menu; the leader cannot start while anyone is in a match.
+  async setActivity(activity: Activity): Promise<void> {
+    if (activity === this.activity) return;
+    this.activity = activity;
+    await this.sync();
   }
 
   async invite(account: string): Promise<void> {

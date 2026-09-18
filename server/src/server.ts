@@ -3,7 +3,8 @@ import {
 } from "../../src/game/account/friends";
 import { parseNickname, type AccountView } from "../../src/game/account/nickname";
 import {
-  addInvite, checkInvite, joinParty, kickFromParty, leaveParty, type Party, type PartyView,
+  addInvite, checkInvite, joinParty, kickFromParty, leaveParty, readActivity, readPartyMatch, type Party,
+  type PartyView,
 } from "../../src/game/account/party";
 import { COSTUMES } from "../../src/game/render/costumes";
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
@@ -73,6 +74,19 @@ async function betweenFriends<T>(other: string, rule: (me: FriendSide, them: Fri
     if (JSON.stringify(them.lists) !== before[1]) await writeFriendSide(them);
     return value;
   });
+}
+
+// Who findMatch seats: you alone, or your party if you lead one and everyone is back at the menu.
+async function partySeats(account: string, now: number): Promise<string[]> {
+  const stored = await readPartyOf(account);
+  if (!stored) return [account];
+  if (stored.party.leader !== account) throw new RuleViolation("not_leader");
+  for (const member of stored.party.members) {
+    if (member === account) continue;
+    const state = await $global.getUserState(member);
+    if (!isOnline(state.lastSeenAt, now) || readActivity(state.activity) !== "menu") throw new RuleViolation("party_busy");
+  }
+  return stored.party.members;
 }
 
 function requireLive(ctx: RoomContext): SecretMatch {
@@ -191,11 +205,13 @@ export class Server {
     await $global.updateUserState($sender.account, { costume: id });
   }
 
-  // Marks you online, drops party members who went quiet, and returns your party and invites.
-  async syncParty(): Promise<PartyView> {
+  // Marks you online (and at the menu or in a match), drops party members who went quiet,
+  // and returns your party, your invites and any match your leader seated you in.
+  async syncParty(activity?: unknown): Promise<PartyView> {
     const account = $sender.account;
     const now = Date.now();
     await markSeen(account, now);
+    if (activity === "menu" || activity === "match") await $global.updateUserState(account, { activity });
     return withPartyLock(async () => {
       let stored = await readPartyOf(account);
       if (stored) {
@@ -217,6 +233,7 @@ export class Server {
           members: await Promise.all(stored.party.members.map((m) => partyMember(m, now))),
         },
         invites: await Promise.all(invites.map(async (i) => ({ account: i.from, nickname: await readNickname(i.from) }))),
+        match: readPartyMatch((await $global.getUserState(account)).partyMatch, now),
       };
     });
   }
@@ -277,24 +294,45 @@ export class Server {
     });
   }
 
+  // Seats you, or as a party leader your whole party, in one lobby; the others follow with joinPartyMatch.
   async findMatch(): Promise<{ roomId: string }> {
     const account = $sender.account;
-    return withMatchmakingLock(async () => {
+    const now = Date.now();
+    const seats = await partySeats(account, now);
+    const roomId = await withMatchmakingLock(async () => {
       const lobbies = await listLobbies();
-      const target = lobbies.find((l) => l.match.players.includes(account))
-        ?? lobbies.find((l) => l.match.players.length < MATCH_PLAYERS);
-      const roomId = target?.roomId ?? newRoomId(Date.now());
-      await $global.joinRoom(roomId);
-      await withRoomLock(roomId, async () => {
-        const match = (await readMatch(roomId)) ?? createLobby(Date.now());
-        joinLobby(match, account);
+      const missing = (players: string[]) => seats.filter((s) => !players.includes(s)).length;
+      const target = lobbies.find((l) => missing(l.match.players) === 0)
+        ?? lobbies.find((l) => l.match.players.length + missing(l.match.players) <= MATCH_PLAYERS);
+      const id = target?.roomId ?? newRoomId(now);
+      await $global.joinRoom(id);
+      await withRoomLock(id, async () => {
+        const match = (await readMatch(id)) ?? createLobby(now);
+        for (const seat of seats) joinLobby(match, seat);
         if (match.players.length === MATCH_PLAYERS) {
           match.secretRef = await createSecret(startMatch(match, clock(match), Math.random, SPAWNS));
         }
-        await writeMatch(roomId, match);
+        await writeMatch(id, match);
       });
-      return { roomId };
+      return id;
     });
+    for (const member of seats) {
+      if (member !== account) await $global.updateUserState(member, { partyMatch: { roomId, at: now } });
+    }
+    return { roomId };
+  }
+
+  // Follows your party leader into the room they seated you in.
+  async joinPartyMatch(): Promise<{ roomId: string }> {
+    const account = $sender.account;
+    const seat = readPartyMatch((await $global.getUserState(account)).partyMatch, Date.now());
+    const match = seat ? await readMatch(seat.roomId) : null;
+    if (!seat || !match || match.phase === "ended" || !match.players.includes(account)) {
+      throw new RuleViolation("unavailable");
+    }
+    await $global.joinRoom(seat.roomId);
+    await $global.updateUserState(account, { partyMatch: null });
+    return { roomId: seat.roomId };
   }
 
   async leaveMatch(): Promise<void> {

@@ -91,14 +91,16 @@ export class MatchClient {
     };
   }
 
-  async join(): Promise<void> {
+  // "findMatch" finds a lobby (for a party leader, one for the whole party);
+  // "joinPartyMatch" follows your leader into the room they seated you in.
+  async join(entry: "findMatch" | "joinPartyMatch" = "findMatch"): Promise<void> {
     this.set({ phase: "searching", error: null });
     try {
       const version = await this.transport.call<{ protocol: number }>("getServerVersion");
       if (version?.protocol !== PROTOCOL_VERSION) {
         throw new Error(`server protocol ${version?.protocol}, client protocol ${PROTOCOL_VERSION}`);
       }
-      const { roomId } = await this.transport.call<{ roomId: string }>("findMatch");
+      const { roomId } = await this.transport.call<{ roomId: string }>(entry);
       this.set({ roomId });
       this.listen(roomId);
       await this.refresh();

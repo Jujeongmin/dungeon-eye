@@ -12,13 +12,14 @@ describe("partyLineup", () => {
 
   it("puts you first, then the others in party order with their costumes", () => {
     const view: PartyView = {
+      match: null,
       invites: [],
       party: {
         leader: "a",
         members: [
-          { account: "a", nickname: "Hunter", costume: "raider", online: true },
-          { account: "me", nickname: "유적왕", costume: "explorer", online: true },
-          { account: "b", nickname: null, costume: "pirate", online: true },
+          { account: "a", nickname: "Hunter", costume: "raider", online: true, activity: "menu" },
+          { account: "me", nickname: "유적왕", costume: "explorer", online: true, activity: "menu" },
+          { account: "b", nickname: null, costume: "pirate", online: true, activity: "menu" },
         ],
       },
     };

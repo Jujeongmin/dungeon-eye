@@ -17,7 +17,7 @@ export class LocalTransport implements MatchTransport {
       return Promise.resolve(undefined as T);
     }
     const pending = this.world.call(this.account, this.roomId, name, args).then((result) => {
-      if (name === "findMatch") this.roomId = (result as { roomId: string }).roomId;
+      if (name === "findMatch" || name === "joinPartyMatch") this.roomId = (result as { roomId: string }).roomId;
       if (name === "leaveMatch") this.roomId = null;
       return result as T;
     });

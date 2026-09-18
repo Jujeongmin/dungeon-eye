@@ -5,6 +5,12 @@ import type { MatchClient } from "../net/matchClient";
 import { displayName } from "../game/render/names";
 import { Hud } from "./Hud";
 
+const JOIN_ERROR: Record<string, string> = {
+  party_busy: "파티원이 아직 게임 중이에요",
+  not_leader: "파티장만 빠른 시작을 할 수 있어요",
+  unavailable: "들어갈 수 있는 방이 없어요",
+};
+
 export interface MatchScreenProps {
   client: MatchClient;
   onFrame?: (dt: number, pose: Pose | null) => void;
@@ -68,7 +74,7 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
         <div className="overlay dim">
           <div className="dark-panel result-panel">
             <h2 className="traitor">연결 오류</h2>
-            <p>{client.state.error}</p>
+            <p>{JOIN_ERROR[client.state.error ?? ""] ?? client.state.error}</p>
             <button type="button" className="brush-button" onClick={onExit}>처음으로</button>
           </div>
         </div>

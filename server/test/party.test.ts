@@ -35,8 +35,8 @@ describe("party invites", () => {
     const party = await partyOf(server, "test-a");
     expect(party.leader).toBe("test-a");
     expect(party.members).toEqual([
-      { account: "test-a", nickname: "Hunter", costume: "explorer", online: true },
-      { account: "test-b", nickname: "Seeker", costume: "raider", online: true },
+      { account: "test-a", nickname: "Hunter", costume: "explorer", online: true, activity: "menu" },
+      { account: "test-b", nickname: "Seeker", costume: "raider", online: true, activity: "menu" },
     ]);
     expect((await as(server, "test-b").syncParty()).invites).toEqual([]);
   });

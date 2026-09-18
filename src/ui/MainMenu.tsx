@@ -22,6 +22,9 @@ interface MainMenuProps {
   friendsView: FriendsView | null;
   party: PartyClient | null;
   partyView: PartyView | null;
+  // Set when your party leader started a match; the menu plays its exit and calls onFollowParty.
+  partyCall: { roomId: string } | null;
+  onFollowParty: () => void;
   onPractice: () => void;
   onOnline: () => void;
   onlineAvailable: boolean;
@@ -30,7 +33,7 @@ interface MainMenuProps {
 type Sheet = "none" | "settings" | "help";
 
 export function MainMenu({
-  account, nickname, onSaveNickname, accountFailed, friends, friendsView, party, partyView,
+  account, nickname, onSaveNickname, accountFailed, friends, friendsView, party, partyView, partyCall, onFollowParty,
   onPractice, onOnline, onlineAvailable,
 }: MainMenuProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -43,7 +46,11 @@ export function MainMenu({
   const [renaming, setRenaming] = useState(false);
   const [inviteProblem, setInviteProblem] = useState<string | null>(null);
   const name = nickname ?? ownName(account);
-  const onlineReady = onlineAvailable && nickname !== null;
+  const members = partyView?.party?.members ?? [];
+  const inParty = members.length > 0;
+  const leading = partyView?.party?.leader === account;
+  const partyBusy = members.some((m) => m.account !== account && (!m.online || m.activity !== "menu"));
+  const onlineReady = onlineAvailable && nickname !== null && (!inParty || (leading && !partyBusy));
   const requests = friendsView?.incoming.length ?? 0;
   const onlineNote = !onlineAvailable
     ? "빠른 시작은 Verse8 서버를 연결한 뒤 열립니다."
@@ -51,7 +58,11 @@ export function MainMenu({
       ? "계정 정보를 불러오지 못했습니다. 새로고침해 주세요."
       : !onSaveNickname
         ? "계정 정보를 불러오는 중…"
-        : null;
+        : inParty && !leading
+          ? "파티장이 빠른 시작을 누르면 함께 들어갑니다."
+          : inParty && partyBusy
+            ? "파티원이 아직 게임 중이에요."
+            : null;
 
   useEffect(() => onMyCostume(setCostume), []);
 
@@ -91,6 +102,11 @@ export function MainMenu({
     else start();
   };
 
+  useEffect(() => {
+    if (partyCall) go(onFollowParty);
+    // Once per call: keyed on the room, and `leaving` stops repeats.
+  }, [partyCall?.roomId]);
+
   return (
     <div className="main-menu">
       <div className="menu-stage" ref={stage} />
@@ -125,7 +141,9 @@ export function MainMenu({
 
       <nav className="menu-left">
         <h1>TRAITOR HUNT</h1>
-        <button type="button" className="brush-button" onClick={() => go(onOnline)} disabled={!onlineReady || leaving}>빠른 시작</button>
+        <button type="button" className="brush-button" onClick={() => go(onOnline)} disabled={!onlineReady || leaving}>
+          {inParty ? `빠른 시작 (파티 ${members.length}명)` : "빠른 시작"}
+        </button>
         <button type="button" className="brush-button" onClick={() => go(onPractice)} disabled={leaving}>연습 (봇 3명)</button>
         <button type="button" className="brush-button" disabled>코스튬 (개발 중)</button>
         <button type="button" className="brush-button" disabled>전적 · 랭킹 (개발 중)</button>

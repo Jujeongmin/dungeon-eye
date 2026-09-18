@@ -14,12 +14,16 @@ import { useFriends } from "./ui/useFriends";
 import { useParty } from "./ui/useParty";
 
 type Mode = "title" | "practice" | "online";
+type Entry = "findMatch" | "joinPartyMatch";
 
 const layout = parseLevel(RUINS, TILE_SIZE);
 const ONLINE_AVAILABLE = Boolean(import.meta.env.VITE_AGENT8_VERSE);
 
 export default function App() {
   const [mode, setMode] = useState<Mode>("title");
+  const [entry, setEntry] = useState<Entry>("findMatch");
+  // The last room your leader called you into, so a failed follow is not retried on every menu visit.
+  const [followed, setFollowed] = useState<string | null>(null);
   const { server, connected } = useGameServer();
   const toTitle = useCallback(() => setMode("title"), []);
   const menuTransport = useMemo(
@@ -28,10 +32,11 @@ export default function App() {
   );
   const { view, failed, save } = useAccount(menuTransport);
   const friends = useFriends(menuTransport);
-  const party = useParty(menuTransport);
+  const party = useParty(menuTransport, mode === "title" ? "menu" : "match");
+  const partyCall = party.view?.match && party.view.match.roomId !== followed ? party.view.match : null;
   if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
-  if (mode === "online") return <OnlineMatch onExit={toTitle} />;
+  if (mode === "online") return <OnlineMatch entry={entry} onExit={toTitle} />;
   return (
     <MainMenu
       account={menuTransport?.account ?? (connected ? server.account : PRACTICE_ACCOUNT)}
@@ -43,7 +48,16 @@ export default function App() {
       party={party.client}
       partyView={party.view}
       onPractice={() => setMode("practice")}
-      onOnline={() => setMode("online")}
+      onOnline={() => {
+        setEntry("findMatch");
+        setMode("online");
+      }}
+      partyCall={partyCall}
+      onFollowParty={() => {
+        setFollowed(partyCall?.roomId ?? null);
+        setEntry("joinPartyMatch");
+        setMode("online");
+      }}
       onlineAvailable={ONLINE_AVAILABLE}
     />
   );
@@ -69,7 +83,7 @@ function PracticeMatch({ onExit }: { onExit: () => void }) {
   return <MatchScreen client={session.human} onFrame={onFrame} onExit={onExit} />;
 }
 
-function OnlineMatch({ onExit }: { onExit: () => void }) {
+function OnlineMatch({ entry, onExit }: { entry: Entry; onExit: () => void }) {
   const { server, connected } = useGameServer();
   const [client, setClient] = useState<MatchClient | null>(null);
 
@@ -77,7 +91,7 @@ function OnlineMatch({ onExit }: { onExit: () => void }) {
     if (!connected) return;
     const next = new MatchClient(new Verse8Transport(server));
     let live = true;
-    void next.join().then(() => {
+    void next.join(entry).then(() => {
       if (live) setClient(next);
     });
     return () => {
@@ -85,7 +99,7 @@ function OnlineMatch({ onExit }: { onExit: () => void }) {
       void next.leave();
       next.dispose();
     };
-  }, [connected, server]);
+  }, [connected, server, entry]);
 
   const director = useMemo(() => (client ? new HostDirector(client, layout) : null), [client]);
   const onFrame = useCallback((dt: number, pose: Pose | null) => director?.update(dt, pose), [director]);

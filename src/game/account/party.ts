@@ -4,6 +4,23 @@ export const PARTY_MAX = 4;
 export const INVITE_TTL_MS = 120_000;
 // Invites one account can hold; a new one pushes out the oldest.
 export const INVITE_LIMIT = 10;
+// How long a member has to follow the leader into a match.
+export const PARTY_MATCH_TTL_MS = 60_000;
+
+// Where a player is, so the leader does not start while someone is still in a match.
+export type Activity = "menu" | "match";
+
+export function readActivity(raw: unknown): Activity {
+  return raw === "match" ? "match" : "menu";
+}
+
+// The room the leader seated you in, while it is fresh enough to follow.
+export function readPartyMatch(raw: unknown, now: number): { roomId: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { roomId, at } = raw as { roomId?: unknown; at?: unknown };
+  if (typeof roomId !== "string" || typeof at !== "number" || now - at > PARTY_MATCH_TTL_MS) return null;
+  return { roomId };
+}
 
 export interface Party {
   leader: string;
@@ -59,9 +76,12 @@ export interface PartyMemberView {
   nickname: string | null;
   costume: string;
   online: boolean;
+  activity: Activity;
 }
 
 export interface PartyView {
   party: { leader: string; members: PartyMemberView[] } | null;
   invites: { account: string; nickname: string | null }[];
+  // Set when your leader started a match you should join.
+  match: { roomId: string } | null;
 }

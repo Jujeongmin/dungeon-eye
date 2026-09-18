@@ -1,5 +1,7 @@
 import { isOnline, readFriendLists, type FriendEntry, type FriendSide } from "../../src/game/account/friends";
-import { readInvites, type Party, type PartyInvite, type PartyMemberView } from "../../src/game/account/party";
+import {
+  readActivity, readInvites, type Party, type PartyInvite, type PartyMemberView,
+} from "../../src/game/account/party";
 import { COSTUMES } from "../../src/game/render/costumes";
 import { addResult, readProfile } from "../../src/game/match/profile";
 import {
@@ -214,5 +216,6 @@ export async function partyMember(account: string, now: number): Promise<PartyMe
     nickname: typeof state.nickname === "string" ? state.nickname : null,
     costume: typeof state.costume === "string" ? state.costume : COSTUMES[0].id,
     online: isOnline(state.lastSeenAt, now),
+    activity: readActivity(state.activity),
   };
 }
