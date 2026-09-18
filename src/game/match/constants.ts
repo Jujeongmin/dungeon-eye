@@ -1,4 +1,4 @@
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 export const MATCH_PLAYERS = 4;
 export const PLAYER_HP = 100;
 

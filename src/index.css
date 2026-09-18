@@ -303,7 +303,7 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
 .friends-panel h3 { font: 700 14px var(--font-head); color: var(--ink-dim); margin: 22px 0 6px; }
 .friends-panel .note { font-size: 13px; color: var(--ink-dim); line-height: 1.6; }
 .friend-add { display: flex; gap: 6px; margin-top: 16px; }
-.friend-add input {
+.friend-add input, .nickname-form input {
   flex: 1;
   min-width: 0;
   font: 500 14px var(--font-body);
@@ -314,4 +314,11 @@ body { display: flex; align-items: center; justify-content: center; overflow: hi
   padding: 8px 6px;
   outline: none;
 }
-.friend-add input:focus { border-bottom-color: var(--ember); }
+.friend-add input:focus, .nickname-form input:focus { border-bottom-color: var(--ember); }
+.name-button { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; text-shadow: inherit; }
+.name-button:hover { color: var(--ember); }
+.nickname-panel { width: 380px; padding: 56px 90px; }
+.nickname-panel .note { font-size: 13px; color: var(--ink-dim); line-height: 1.6; text-align: center; margin: 0; }
+.nickname-form { display: flex; gap: 6px; margin-top: 18px; }
+.nickname-problem { font-size: 13px; color: var(--ember); text-align: center; margin: 10px 0 0; }
+.nickname-panel .close { display: block; margin: 10px auto 0; }

@@ -129,6 +129,7 @@ export const RULE_ERRORS = [
   "unavailable", "no_monster", "monster_dead", "out_of_range", "too_fast",
   "not_authority", "stunned", "no_target", "not_at_exit", "match_full",
   "nothing_here", "need_shards", "exit_locked", "sealed", "bound",
+  "nickname_invalid", "nickname_taken",
 ] as const;
 
 export type RuleError = (typeof RULE_ERRORS)[number];

@@ -2,11 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { MenuScene } from "../game/render/MenuScene";
 import { ownName } from "../game/render/names";
 import { FriendsPanel } from "./FriendsPanel";
+import { NicknamePanel } from "./NicknamePanel";
 import { myCostume, onMyCostume } from "./profile";
 import { SettingsPanel } from "./SettingsPanel";
 
 interface MainMenuProps {
   account: string;
+  // Your server nickname; null while offline, loading, or not yet picked.
+  nickname: string | null;
+  // Null until the server account has loaded.
+  onSaveNickname: ((nickname: string) => Promise<void>) | null;
+  accountFailed: boolean;
   onPractice: () => void;
   onOnline: () => void;
   onlineAvailable: boolean;
@@ -14,7 +20,9 @@ interface MainMenuProps {
 
 type Sheet = "none" | "settings" | "help";
 
-export function MainMenu({ account, onPractice, onOnline, onlineAvailable }: MainMenuProps) {
+export function MainMenu({
+  account, nickname, onSaveNickname, accountFailed, onPractice, onOnline, onlineAvailable,
+}: MainMenuProps) {
   const stage = useRef<HTMLDivElement>(null);
   const scene = useRef<MenuScene | null>(null);
   const [loading, setLoading] = useState(0);
@@ -22,7 +30,16 @@ export function MainMenu({ account, onPractice, onOnline, onlineAvailable }: Mai
   const [sheet, setSheet] = useState<Sheet>("none");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const name = ownName(account);
+  const [renaming, setRenaming] = useState(false);
+  const name = nickname ?? ownName(account);
+  const onlineReady = onlineAvailable && nickname !== null;
+  const onlineNote = !onlineAvailable
+    ? "빠른 시작은 Verse8 서버를 연결한 뒤 열립니다."
+    : accountFailed
+      ? "계정 정보를 불러오지 못했습니다. 새로고침해 주세요."
+      : !onSaveNickname
+        ? "계정 정보를 불러오는 중…"
+        : null;
 
   useEffect(() => onMyCostume(setCostume), []);
 
@@ -57,7 +74,13 @@ export function MainMenu({ account, onPractice, onOnline, onlineAvailable }: Mai
 
       <div className="menu-profile band">
         <span className="menu-level">Lv 1</span>
-        <span className="menu-name">{name}</span>
+        {onSaveNickname ? (
+          <button type="button" className="menu-name name-button" title="닉네임 바꾸기" onClick={() => setRenaming(true)}>
+            {name}
+          </button>
+        ) : (
+          <span className="menu-name">{name}</span>
+        )}
       </div>
 
       <div className="menu-corner">
@@ -67,15 +90,23 @@ export function MainMenu({ account, onPractice, onOnline, onlineAvailable }: Mai
 
       <nav className="menu-left">
         <h1>TRAITOR HUNT</h1>
-        <button type="button" className="brush-button" onClick={() => go(onOnline)} disabled={!onlineAvailable || leaving}>빠른 시작</button>
+        <button type="button" className="brush-button" onClick={() => go(onOnline)} disabled={!onlineReady || leaving}>빠른 시작</button>
         <button type="button" className="brush-button" onClick={() => go(onPractice)} disabled={leaving}>연습 (봇 3명)</button>
         <button type="button" className="brush-button" disabled>코스튬 (개발 중)</button>
         <button type="button" className="brush-button" disabled>전적 · 랭킹 (개발 중)</button>
         <button type="button" className="brush-button" onClick={() => setSheet("help")}>게임 방법</button>
-        {!onlineAvailable && <p className="note">빠른 시작은 Verse8 서버를 연결한 뒤 열립니다.</p>}
+        {onlineNote && <p className="note">{onlineNote}</p>}
       </nav>
 
       {friendsOpen && <FriendsPanel onClose={() => setFriendsOpen(false)} online={onlineAvailable} />}
+
+      {onSaveNickname && (nickname === null || renaming) && (
+        <NicknamePanel
+          current={nickname}
+          onSave={onSaveNickname}
+          onClose={nickname === null ? undefined : () => setRenaming(false)}
+        />
+      )}
 
       {sheet === "settings" && <SettingsPanel onClose={() => setSheet("none")} />}
       {sheet === "help" && (

@@ -1,3 +1,4 @@
+import { parseNickname, type AccountView } from "../../src/game/account/nickname";
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
 import {
   applyMonsterPoses, monsterAttack, reachExit, shootMonster, type MonsterPoseUpdate,
@@ -13,8 +14,9 @@ import { privateView, type PrivateView } from "../../src/game/match/view";
 import { stepVote } from "../../src/game/match/vote";
 import { RUINS, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
 import {
-  createSecret, deleteSecret, isPose, listLobbies, newRoomId, readMatch, readPose, readPoses, readSecret,
-  saveResults, withMatchmakingLock, withRoomLock, writeMatch, writePose, writeSecret,
+  claimNickname, createSecret, deleteSecret, isPose, listLobbies, newRoomId, readMatch, readNickname, readPose,
+  readPoses, readSecret, saveResults, withMatchmakingLock, withNicknameLock, withRoomLock, writeMatch, writePose,
+  writeSecret,
 } from "./store";
 
 const LEVEL = parseLevel(RUINS, TILE_SIZE);
@@ -117,6 +119,18 @@ function notify(ctx: RoomContext): void {
 export class Server {
   async getServerVersion(): Promise<{ protocol: number }> {
     return { protocol: PROTOCOL_VERSION };
+  }
+
+  async getAccount(): Promise<AccountView> {
+    const account = $sender.account;
+    return { account, nickname: await readNickname(account) };
+  }
+
+  async setNickname(requested: unknown): Promise<AccountView> {
+    const { name, key } = parseNickname(requested);
+    const account = $sender.account;
+    await withNicknameLock(() => claimNickname(account, key, name));
+    return { account, nickname: name };
   }
 
   async findMatch(): Promise<{ roomId: string }> {

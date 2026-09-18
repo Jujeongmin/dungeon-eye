@@ -13,6 +13,21 @@ interface RoomRecord {
 
 type AnyFunction = (...args: unknown[]) => unknown;
 
+interface CollectionQuery {
+  filters?: { field: string; operator: string; value: unknown }[];
+  limit?: number;
+}
+
+// Only equality filters so far; anything else fails loudly instead of matching everything.
+function query(items: Json[], options: CollectionQuery = {}): Json[] {
+  let found = items;
+  for (const filter of options.filters ?? []) {
+    if (filter.operator !== "==") throw new Error(`LocalWorld: unsupported filter operator ${filter.operator}`);
+    found = found.filter((item) => item[filter.field] === filter.value);
+  }
+  return options.limit ? found.slice(0, options.limit) : found;
+}
+
 function copy<T>(value: T): T {
   return value === undefined ? value : (JSON.parse(JSON.stringify(value)) as T);
 }
@@ -185,7 +200,14 @@ export class LocalWorld {
         merge(stored, item);
         return copy(stored);
       },
-      getCollectionItems: async (collectionId: string) => [...this.collection(collectionId).values()].map(copy),
+      getCollectionItems: async (collectionId: string, options?: CollectionQuery) =>
+        query([...this.collection(collectionId).values()], options).map(copy),
+      deleteCollectionItem: async (collectionId: string, itemId: string) => {
+        if (!this.collections.get(collectionId)?.delete(itemId)) {
+          throw new Error(`Item ${itemId} not found in collection ${collectionId}`);
+        }
+        return { __id: itemId };
+      },
       countCollectionItems: async (collectionId: string) => this.collections.get(collectionId)?.size ?? 0,
       deleteCollection: async (collectionId: string) => {
         this.collections.delete(collectionId);

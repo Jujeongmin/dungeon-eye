@@ -1,6 +1,6 @@
 import { addResult, readProfile } from "../../src/game/match/profile";
-import type {
-  PlayerResult, Pose, Poses, PublicMatch, SecretMatch, SecretRef,
+import {
+  RuleViolation, type PlayerResult, type Pose, type Poses, type PublicMatch, type SecretMatch, type SecretRef,
 } from "../../src/game/match/types";
 
 export const RESULTS_COLLECTION = "match_results";
@@ -96,4 +96,41 @@ export async function saveResults(matchId: string, results: PlayerResult[]): Pro
     const state = await $global.getUserState(result.account);
     await $global.updateUserState(result.account, { profile: addResult(readProfile(state.profile), result) });
   }
+}
+
+// One item per taken nickname, looked up by its case-insensitive key.
+export const NICKNAMES_COLLECTION = "nicknames";
+
+interface NicknameItem { __id: string; key: string; name: string; account: string }
+
+export function withNicknameLock<T>(fn: () => Promise<T>): Promise<T> {
+  return $lock("de-nicknames", fn);
+}
+
+export async function findNickname(key: string): Promise<NicknameItem | null> {
+  const [item] = await $global.getCollectionItems(NICKNAMES_COLLECTION, {
+    filters: [{ field: "key", operator: "==", value: key }],
+    limit: 1,
+  });
+  return (item as NicknameItem | undefined) ?? null;
+}
+
+// Moves the account's nickname to `key`, freeing whatever name it held before. Call inside withNicknameLock.
+export async function claimNickname(account: string, key: string, name: string): Promise<void> {
+  const owned = await findNickname(key);
+  if (owned && owned.account !== account) throw new RuleViolation("nickname_taken");
+  const state = await $global.getUserState(account);
+  let nicknameId = owned?.__id;
+  if (owned) {
+    await $global.updateCollectionItem(NICKNAMES_COLLECTION, { __id: owned.__id, name });
+  } else {
+    if (typeof state.nicknameId === "string") await $global.deleteCollectionItem(NICKNAMES_COLLECTION, state.nicknameId);
+    nicknameId = (await $global.addCollectionItem(NICKNAMES_COLLECTION, { key, name, account })).__id;
+  }
+  await $global.updateUserState(account, { nickname: name, nicknameId });
+}
+
+export async function readNickname(account: string): Promise<string | null> {
+  const nickname: unknown = (await $global.getUserState(account)).nickname;
+  return typeof nickname === "string" ? nickname : null;
 }

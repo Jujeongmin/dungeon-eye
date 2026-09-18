@@ -9,6 +9,7 @@ import { Verse8Transport } from "./net/verse8Transport";
 import { MatchScreen } from "./ui/MatchScreen";
 import { ModelGallery, galleryEnabled } from "./ui/ModelGallery";
 import { MainMenu } from "./ui/MainMenu";
+import { useAccount } from "./ui/useAccount";
 
 type Mode = "title" | "practice" | "online";
 
@@ -19,12 +20,20 @@ export default function App() {
   const [mode, setMode] = useState<Mode>("title");
   const { server, connected } = useGameServer();
   const toTitle = useCallback(() => setMode("title"), []);
+  const menuTransport = useMemo(
+    () => (ONLINE_AVAILABLE && connected ? new Verse8Transport(server) : null),
+    [connected, server],
+  );
+  const { view, failed, save } = useAccount(menuTransport);
   if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
   if (mode === "online") return <OnlineMatch onExit={toTitle} />;
   return (
     <MainMenu
       account={connected ? server.account : PRACTICE_ACCOUNT}
+      nickname={view?.nickname ?? null}
+      onSaveNickname={view ? save : null}
+      accountFailed={failed}
       onPractice={() => setMode("practice")}
       onOnline={() => setMode("online")}
       onlineAvailable={ONLINE_AVAILABLE}
