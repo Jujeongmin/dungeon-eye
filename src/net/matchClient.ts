@@ -29,6 +29,10 @@ export interface PossessionEvent { monsterId: string; active: boolean; endsAt: n
 
 export const NO_VIEW: PrivateView = { role: null, hp: null, possession: null, possessReadyAt: null };
 export const POSE_THROTTLE_MS = 100;
+// Standing still, the pose is still sent this often, so the others and the server keep hearing from you.
+export const IDLE_POSE_MS = 1000;
+// Smaller changes than these count as standing still.
+const POSE_EPSILON = 0.01;
 export const MONSTER_THROTTLE_MS = 150;
 export const SYNC_INTERVAL_MS = 1000;
 const OWN_MONSTER_HOLD_MS = 500;
@@ -47,6 +51,7 @@ export class MatchClient {
   private current: ClientState = { phase: "idle", roomId: null, match: null, you: NO_VIEW, poses: {}, error: null };
   private offsetMs = 0;
   private lastSyncAt = -Infinity;
+  private lastPose: (Pose & { at: number }) | null = null;
   private refreshing = false;
   private unsubscribers: (() => void)[] = [];
   private readonly reported = new Map<string, number>();
@@ -144,11 +149,17 @@ export class MatchClient {
     void this.transport.call("syncMatch", [], { needResponse: false });
   }
 
+  // Every POSE_THROTTLE_MS while moving, every IDLE_POSE_MS while standing still.
   reportPose(pose: Pose): void {
     if (this.current.phase !== "playing" && this.current.phase !== "lobby") return;
-    void this.transport.call("reportPose", [{ x: pose.x, z: pose.z, yaw: pose.yaw, y: readJumpY(pose.y) }], {
-      needResponse: false, throttle: POSE_THROTTLE_MS,
-    });
+    const sent = { x: pose.x, z: pose.z, yaw: pose.yaw, y: readJumpY(pose.y) };
+    const now = this.now();
+    const last = this.lastPose;
+    const moved = !last || Math.abs(sent.x - last.x) > POSE_EPSILON || Math.abs(sent.z - last.z) > POSE_EPSILON
+      || Math.abs(sent.yaw - last.yaw) > POSE_EPSILON || Math.abs(sent.y - (last.y ?? 0)) > POSE_EPSILON;
+    if (last && now - last.at < (moved ? POSE_THROTTLE_MS : IDLE_POSE_MS)) return;
+    this.lastPose = { ...sent, at: now };
+    void this.transport.call("reportPose", [sent], { needResponse: false });
   }
 
   reportMonsters(updates: MonsterPoseUpdate[]): void {

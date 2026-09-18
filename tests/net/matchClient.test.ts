@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Server } from "../../server/src/server";
+import { PROTOCOL_VERSION } from "../../src/game/match/constants";
 import { LocalWorld } from "../../src/net/local/localWorld";
 import { LocalTransport } from "../../src/net/localTransport";
 import { MatchClient, SYNC_INTERVAL_MS, errorCode } from "../../src/net/matchClient";
@@ -208,5 +209,55 @@ describe("jump height", () => {
     a.reportPose({ x: 5, z: 6, yaw: 0 });
     await settle(world);
     expect(b.state.poses[a.account]?.y).toBe(0);
+  });
+});
+
+describe("pose reports", () => {
+  // A transport that only counts reportPose calls, in a playing match.
+  async function counting(now: () => number) {
+    const sent: unknown[] = [];
+    const transport: MatchTransport = {
+      account: "me",
+      call: async <T,>(name: string, args: unknown[] = []) => {
+        if (name === "reportPose") sent.push(args[0]);
+        if (name === "getServerVersion") return { protocol: PROTOCOL_VERSION } as T;
+        if (name === "findMatch") return { roomId: "r" } as T;
+        if (name === "getMatchState") {
+          return { roomId: "r", serverNow: 0, match: { version: 1, phase: "playing", players: ["me"], monsters: {} }, you: { role: "adventurer", hp: 100, possession: null, possessReadyAt: null } } as T;
+        }
+        return undefined as T;
+      },
+      subscribeRoomState: () => () => {},
+      subscribeRoomUsers: () => () => {},
+      onRoomMessage: () => () => {},
+      subscribeMyState: () => () => {},
+    };
+    const client = new MatchClient(transport, now);
+    await client.join();
+    return { client, sent };
+  }
+
+  it("sends every 100 ms while moving", async () => {
+    let t = 0;
+    const { client, sent } = await counting(() => t);
+    for (t = 0; t <= 1000; t += 20) client.reportPose({ x: t / 100, z: 0, yaw: 0 });
+    expect(sent.length).toBeGreaterThanOrEqual(10);
+    expect(sent.length).toBeLessThanOrEqual(11);
+  });
+
+  it("still sends once a second while standing still", async () => {
+    let t = 0;
+    const { client, sent } = await counting(() => t);
+    for (t = 0; t <= 3000; t += 20) client.reportPose({ x: 1, z: 2, yaw: 0.5 });
+    expect(sent).toHaveLength(4);
+  });
+
+  it("sends at once when the player starts moving again", async () => {
+    let t = 0;
+    const { client, sent } = await counting(() => t);
+    for (t = 0; t <= 500; t += 20) client.reportPose({ x: 1, z: 2, yaw: 0 });
+    expect(sent).toHaveLength(1);
+    client.reportPose({ x: 1.5, z: 2, yaw: 0 });
+    expect(sent).toHaveLength(2);
   });
 });
