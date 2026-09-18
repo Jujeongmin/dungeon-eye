@@ -1,7 +1,11 @@
 import {
-  acceptFriend, removeFriend, requestFriend, type FriendSide, type FriendsView,
+  acceptFriend, isOnline, removeFriend, requestFriend, type FriendSide, type FriendsView,
 } from "../../src/game/account/friends";
 import { parseNickname, type AccountView } from "../../src/game/account/nickname";
+import {
+  addInvite, checkInvite, joinParty, kickFromParty, leaveParty, type Party, type PartyView,
+} from "../../src/game/account/party";
+import { COSTUMES } from "../../src/game/render/costumes";
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
 import {
   applyMonsterPoses, monsterAttack, reachExit, shootMonster, type MonsterPoseUpdate,
@@ -18,8 +22,9 @@ import { stepVote } from "../../src/game/match/vote";
 import { RUINS, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
 import {
   claimNickname, createSecret, deleteSecret, findNickname, friendEntry, isPose, listLobbies, markSeen, newRoomId,
-  readFriendSide, readMatch, readNickname, readPose, readPoses, readSecret, saveResults, withFriendsLock,
-  withMatchmakingLock, withNicknameLock, withRoomLock, writeFriendSide, writeMatch, writePose, writeSecret,
+  partyMember, readFriendSide, readMatch, readNickname, readPartyInvites, readPartyOf, readPose, readPoses,
+  readSecret, saveResults, withFriendsLock, withMatchmakingLock, withNicknameLock, withPartyLock, withRoomLock,
+  writeFriendSide, writeMatch, writeParty, writePartyInvites, writePose, writeSecret,
 } from "./store";
 
 const LEVEL = parseLevel(RUINS, TILE_SIZE);
@@ -179,6 +184,97 @@ export class Server {
 
   async removeFriend(account: unknown): Promise<void> {
     await betweenFriends(requireText(account), removeFriend);
+  }
+
+  async setCostume(id: unknown): Promise<void> {
+    if (!COSTUMES.some((c) => c.id === id)) throw new RuleViolation("unavailable");
+    await $global.updateUserState($sender.account, { costume: id });
+  }
+
+  // Marks you online, drops party members who went quiet, and returns your party and invites.
+  async syncParty(): Promise<PartyView> {
+    const account = $sender.account;
+    const now = Date.now();
+    await markSeen(account, now);
+    return withPartyLock(async () => {
+      let stored = await readPartyOf(account);
+      if (stored) {
+        let party: Party | null = stored.party;
+        for (const member of stored.party.members) {
+          if (party && member !== account && !isOnline((await $global.getUserState(member)).lastSeenAt, now)) {
+            party = leaveParty(party, member);
+          }
+        }
+        if (party !== stored.party) {
+          await writeParty(stored, party);
+          stored = party ? { id: stored.id, party } : null;
+        }
+      }
+      const invites = await readPartyInvites(account, now);
+      return {
+        party: stored && {
+          leader: stored.party.leader,
+          members: await Promise.all(stored.party.members.map((m) => partyMember(m, now))),
+        },
+        invites: await Promise.all(invites.map(async (i) => ({ account: i.from, nickname: await readNickname(i.from) }))),
+      };
+    });
+  }
+
+  async inviteToParty(target: unknown): Promise<void> {
+    const to = requireText(target);
+    const account = $sender.account;
+    const now = Date.now();
+    await withPartyLock(async () => {
+      const stored = await readPartyOf(account);
+      checkInvite(stored?.party ?? null, to, (await readFriendSide(account)).lists.friends);
+      await writePartyInvites(to, addInvite(await readPartyInvites(to, now), account, now));
+    });
+  }
+
+  async acceptPartyInvite(from: unknown): Promise<void> {
+    const inviter = requireText(from);
+    const account = $sender.account;
+    const now = Date.now();
+    await withPartyLock(async () => {
+      const invites = await readPartyInvites(account, now);
+      if (!invites.some((i) => i.from === inviter)) throw new RuleViolation("no_invite");
+      const theirs = await readPartyOf(inviter);
+      const mine = await readPartyOf(account);
+      if (!theirs || theirs.id !== mine?.id) {
+        const joined = joinParty(theirs?.party ?? null, inviter, account);
+        if (mine) await writeParty(mine, leaveParty(mine.party, account));
+        await writeParty(theirs, joined);
+      }
+      await writePartyInvites(account, invites.filter((i) => i.from !== inviter));
+    });
+  }
+
+  async declinePartyInvite(from: unknown): Promise<void> {
+    const inviter = requireText(from);
+    const account = $sender.account;
+    await withPartyLock(async () => {
+      const invites = await readPartyInvites(account, Date.now());
+      await writePartyInvites(account, invites.filter((i) => i.from !== inviter));
+    });
+  }
+
+  async leaveParty(): Promise<void> {
+    const account = $sender.account;
+    await withPartyLock(async () => {
+      const mine = await readPartyOf(account);
+      if (mine) await writeParty(mine, leaveParty(mine.party, account));
+    });
+  }
+
+  async kickFromParty(target: unknown): Promise<void> {
+    const who = requireText(target);
+    const account = $sender.account;
+    await withPartyLock(async () => {
+      const mine = await readPartyOf(account);
+      if (!mine) throw new RuleViolation("unavailable");
+      await writeParty(mine, kickFromParty(mine.party, account, who));
+    });
   }
 
   async findMatch(): Promise<{ roomId: string }> {

@@ -1,0 +1,31 @@
+import { describe, expect, it } from "vitest";
+import type { PartyView } from "../../src/game/account/party";
+import { COSTUMES } from "../../src/game/render/costumes";
+import { partyLineup } from "../../src/net/party";
+
+const me = { account: "me", name: "유적왕", costume: COSTUMES[1] };
+
+describe("partyLineup", () => {
+  it("is just you without a party", () => {
+    expect(partyLineup(me, null)).toEqual([{ name: "유적왕", costume: COSTUMES[1], isYou: true }]);
+  });
+
+  it("puts you first, then the others in party order with their costumes", () => {
+    const view: PartyView = {
+      invites: [],
+      party: {
+        leader: "a",
+        members: [
+          { account: "a", nickname: "Hunter", costume: "raider", online: true },
+          { account: "me", nickname: "유적왕", costume: "explorer", online: true },
+          { account: "b", nickname: null, costume: "pirate", online: true },
+        ],
+      },
+    };
+    expect(partyLineup(me, view)).toEqual([
+      { name: "유적왕", costume: COSTUMES[1], isYou: true },
+      { name: "Hunter", costume: COSTUMES[2], isYou: false },
+      { name: "b", costume: COSTUMES[0], isYou: false },
+    ]);
+  });
+});

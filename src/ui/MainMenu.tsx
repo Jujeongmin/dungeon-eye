@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { FriendsView } from "../game/account/friends";
+import type { PartyView } from "../game/account/party";
 import { MenuScene } from "../game/render/MenuScene";
 import { ownName } from "../game/render/names";
 import type { FriendsClient } from "../net/friends";
+import { partyLineup, partyProblem, type PartyClient } from "../net/party";
 import { FriendsPanel } from "./FriendsPanel";
 import { NicknamePanel } from "./NicknamePanel";
 import { myCostume, onMyCostume } from "./profile";
@@ -18,6 +20,8 @@ interface MainMenuProps {
   // Null while offline.
   friends: FriendsClient | null;
   friendsView: FriendsView | null;
+  party: PartyClient | null;
+  partyView: PartyView | null;
   onPractice: () => void;
   onOnline: () => void;
   onlineAvailable: boolean;
@@ -26,7 +30,8 @@ interface MainMenuProps {
 type Sheet = "none" | "settings" | "help";
 
 export function MainMenu({
-  account, nickname, onSaveNickname, accountFailed, friends, friendsView, onPractice, onOnline, onlineAvailable,
+  account, nickname, onSaveNickname, accountFailed, friends, friendsView, party, partyView,
+  onPractice, onOnline, onlineAvailable,
 }: MainMenuProps) {
   const stage = useRef<HTMLDivElement>(null);
   const scene = useRef<MenuScene | null>(null);
@@ -36,6 +41,7 @@ export function MainMenu({
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [inviteProblem, setInviteProblem] = useState<string | null>(null);
   const name = nickname ?? ownName(account);
   const onlineReady = onlineAvailable && nickname !== null;
   const requests = friendsView?.incoming.length ?? 0;
@@ -61,10 +67,22 @@ export function MainMenu({
     };
   }, []);
 
-  // Party members join here once invites are live; for now it is you alone.
   useEffect(() => {
-    scene.current?.setParty([{ name, costume, isYou: true }]);
-  }, [name, costume, loading]);
+    scene.current?.setParty(partyLineup({ account, name, costume }, partyView));
+  }, [account, name, costume, partyView, loading]);
+
+  const invite = partyView?.invites[0] ?? null;
+  const answer = async (accept: boolean) => {
+    if (!party || !invite) return;
+    setInviteProblem(null);
+    try {
+      if (accept) await party.accept(invite.account);
+      else await party.decline(invite.account);
+    } catch (error) {
+      setInviteProblem(partyProblem(error));
+      await party.decline(invite.account).catch(() => undefined);
+    }
+  };
 
   const go = (start: () => void) => {
     if (leaving) return;
@@ -89,6 +107,15 @@ export function MainMenu({
         )}
       </div>
 
+      {invite && (
+        <div className="party-invite band">
+          <span><b>{invite.nickname ?? invite.account}</b>님이 파티에 초대했어요</span>
+          <button type="button" className="text-button" onClick={() => void answer(true)}>수락</button>
+          <button type="button" className="text-button" onClick={() => void answer(false)}>거절</button>
+        </div>
+      )}
+      {!invite && inviteProblem && <div className="party-invite band">{inviteProblem}</div>}
+
       <div className="menu-corner">
         <button type="button" className="brush-button small" onClick={() => setFriendsOpen((v) => !v)}>
           친구{requests > 0 && <span className="badge">{requests}</span>}
@@ -106,7 +133,14 @@ export function MainMenu({
         {onlineNote && <p className="note">{onlineNote}</p>}
       </nav>
 
-      {friendsOpen && <FriendsPanel onClose={() => setFriendsOpen(false)} client={friends} view={friendsView} />}
+      {friendsOpen && <FriendsPanel
+          onClose={() => setFriendsOpen(false)}
+          client={friends}
+          view={friendsView}
+          account={account}
+          party={party}
+          partyView={partyView}
+        />}
 
       {onSaveNickname && (nickname === null || renaming) && (
         <NicknamePanel

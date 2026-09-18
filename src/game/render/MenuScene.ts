@@ -15,10 +15,10 @@ const LIGHT_SLOTS = 6;
 
 // Party slots in the start room, facing the camera (yaw π faces +z). Slot 0 is you, in front.
 const SLOTS = [
-  { x: 29.6, z: 11.4, yaw: Math.PI + 0.25 },
-  { x: 28.2, z: 10.2, yaw: Math.PI + 0.35 },
-  { x: 31.0, z: 10.2, yaw: Math.PI - 0.1 },
-  { x: 26.8, z: 9.2, yaw: Math.PI + 0.45 },
+  { x: 28.9, z: 11.4, yaw: Math.PI + 0.25 },
+  { x: 27.5, z: 10.2, yaw: Math.PI + 0.35 },
+  { x: 30.3, z: 10.2, yaw: Math.PI - 0.1 },
+  { x: 26.1, z: 9.2, yaw: Math.PI + 0.45 },
 ];
 const LABEL_HEIGHT = 2.05;
 

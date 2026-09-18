@@ -1,12 +1,17 @@
 import { useState, type FormEvent } from "react";
 import type { FriendEntry, FriendsView } from "../game/account/friends";
+import { PARTY_MAX, type PartyView } from "../game/account/party";
 import { friendProblem, sortFriends, type FriendsClient } from "../net/friends";
+import { partyProblem, type PartyClient } from "../net/party";
 
 interface FriendsPanelProps {
   onClose: () => void;
   // Null while offline: friends live on the game server.
   client: FriendsClient | null;
   view: FriendsView | null;
+  account: string;
+  party: PartyClient | null;
+  partyView: PartyView | null;
 }
 
 function nameOf(entry: FriendEntry): string {
@@ -14,7 +19,7 @@ function nameOf(entry: FriendEntry): string {
 }
 
 // Right-hand side drawer: add a friend by nickname, answer requests, see who is online.
-export function FriendsPanel({ onClose, client, view }: FriendsPanelProps) {
+export function FriendsPanel({ onClose, client, view, account, party, partyView }: FriendsPanelProps) {
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -28,7 +33,7 @@ export function FriendsPanel({ onClose, client, view }: FriendsPanelProps) {
     try {
       setNotice(await action());
     } catch (error) {
-      setNotice(friendProblem(error));
+      setNotice(key.startsWith("party:") ? partyProblem(error) : friendProblem(error));
     } finally {
       setBusy(null);
     }
@@ -59,6 +64,16 @@ export function FriendsPanel({ onClose, client, view }: FriendsPanelProps) {
 
   const friends = view ? sortFriends(view.friends) : [];
   const onlineCount = friends.filter((f) => f.online).length;
+  const members = partyView?.party?.members ?? [];
+  const leading = partyView?.party?.leader === account;
+  const canInvite = (entry: FriendEntry) =>
+    !!party && entry.online && members.length < PARTY_MAX && !members.some((m) => m.account === entry.account);
+
+  const inviteFriend = (entry: FriendEntry) =>
+    void run(`party:${entry.account}`, async () => {
+      await party!.invite(entry.account);
+      return `${nameOf(entry)}님에게 파티 초대를 보냈어요`;
+    });
 
   return (
     <aside className="friends-panel">
@@ -79,6 +94,37 @@ export function FriendsPanel({ onClose, client, view }: FriendsPanelProps) {
 
       {!client && <p className="note">친구와 파티는 Verse8 서버를 연결한 뒤 열립니다.</p>}
       {client && !view && <p className="note">친구 목록을 불러오는 중…</p>}
+
+      {partyView?.party && (
+        <>
+          <h3>파티 {members.length}/{PARTY_MAX}</h3>
+          <ul className="friend-list">
+            {members.map((m) => (
+              <li key={m.account} className={m.online ? "online" : "offline"}>
+                <span className="presence" />
+                <span className="friend-name">
+                  {m.nickname ?? m.account}
+                  {m.account === partyView.party!.leader && <span className="party-leader">파티장</span>}
+                </span>
+                {leading && m.account !== account && (
+                  <button type="button" className="text-button" disabled={busy !== null}
+                    onClick={() => void run(`party:${m.account}`, async () => {
+                      await party!.kick(m.account);
+                      return null;
+                    })}>내보내기</button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="party-actions">
+            <button type="button" className="text-button" disabled={busy !== null}
+              onClick={() => void run("party:leave", async () => {
+                await party!.leave();
+                return "파티에서 나왔어요";
+              })}>파티 나가기</button>
+          </div>
+        </>
+      )}
 
       {view && view.incoming.length > 0 && (
         <>
@@ -112,6 +158,11 @@ export function FriendsPanel({ onClose, client, view }: FriendsPanelProps) {
               <li key={entry.account} className={entry.online ? "online" : "offline"}>
                 <span className="presence" aria-label={entry.online ? "온라인" : "오프라인"} />
                 <span className="friend-name">{nameOf(entry)}</span>
+                {canInvite(entry) && (
+                  <button type="button" className="text-button" disabled={busy !== null} onClick={() => inviteFriend(entry)}>
+                    초대
+                  </button>
+                )}
                 <button type="button" className="text-button" disabled={busy !== null} onClick={() => remove(entry)}>
                   {confirming === entry.account ? "정말 삭제" : "삭제"}
                 </button>

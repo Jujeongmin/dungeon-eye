@@ -11,6 +11,7 @@ import { ModelGallery, galleryEnabled } from "./ui/ModelGallery";
 import { MainMenu } from "./ui/MainMenu";
 import { useAccount } from "./ui/useAccount";
 import { useFriends } from "./ui/useFriends";
+import { useParty } from "./ui/useParty";
 
 type Mode = "title" | "practice" | "online";
 
@@ -27,17 +28,20 @@ export default function App() {
   );
   const { view, failed, save } = useAccount(menuTransport);
   const friends = useFriends(menuTransport);
+  const party = useParty(menuTransport);
   if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
   if (mode === "online") return <OnlineMatch onExit={toTitle} />;
   return (
     <MainMenu
-      account={connected ? server.account : PRACTICE_ACCOUNT}
+      account={menuTransport?.account ?? (connected ? server.account : PRACTICE_ACCOUNT)}
       nickname={view?.nickname ?? null}
       onSaveNickname={view ? save : null}
       accountFailed={failed}
       friends={friends.client}
       friendsView={friends.view}
+      party={party.client}
+      partyView={party.view}
       onPractice={() => setMode("practice")}
       onOnline={() => setMode("online")}
       onlineAvailable={ONLINE_AVAILABLE}

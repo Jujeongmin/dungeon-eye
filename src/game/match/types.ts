@@ -131,6 +131,7 @@ export const RULE_ERRORS = [
   "nothing_here", "need_shards", "exit_locked", "sealed", "bound",
   "nickname_invalid", "nickname_taken",
   "friend_not_found", "friend_self", "already_friends", "friend_limit", "request_limit", "no_request",
+  "not_friends", "party_full", "already_in_party", "no_invite", "not_leader",
 ] as const;
 
 export type RuleError = (typeof RULE_ERRORS)[number];

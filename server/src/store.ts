@@ -1,4 +1,6 @@
 import { isOnline, readFriendLists, type FriendEntry, type FriendSide } from "../../src/game/account/friends";
+import { readInvites, type Party, type PartyInvite, type PartyMemberView } from "../../src/game/account/party";
+import { COSTUMES } from "../../src/game/render/costumes";
 import { addResult, readProfile } from "../../src/game/match/profile";
 import {
   RuleViolation, type PlayerResult, type Pose, type Poses, type PublicMatch, type SecretMatch, type SecretRef,
@@ -157,6 +159,60 @@ export async function friendEntry(account: string, now: number): Promise<FriendE
   return {
     account,
     nickname: typeof state.nickname === "string" ? state.nickname : null,
+    online: isOnline(state.lastSeenAt, now),
+  };
+}
+
+// One item per party; each member's account state also carries a copy, so their menus hear about changes.
+export const PARTIES_COLLECTION = "parties";
+
+export interface StoredParty { id: string; party: Party }
+
+export function withPartyLock<T>(fn: () => Promise<T>): Promise<T> {
+  return $lock("de-parties", fn);
+}
+
+export async function readPartyOf(account: string): Promise<StoredParty | null> {
+  const copy: unknown = (await $global.getUserState(account)).party;
+  const id = copy && typeof copy === "object" ? (copy as { id?: unknown }).id : null;
+  if (typeof id !== "string") return null;
+  let item: Record<string, unknown>;
+  try {
+    item = await $global.getCollectionItem(PARTIES_COLLECTION, id);
+  } catch {
+    return null; // The party ended without this copy being cleared.
+  }
+  if (typeof item.leader !== "string" || !Array.isArray(item.members) || !item.members.includes(account)) return null;
+  return { id, party: { leader: item.leader, members: item.members } };
+}
+
+// Saves `next` in place of `before` (either may be null) and updates the copy of everyone involved.
+export async function writeParty(before: StoredParty | null, next: Party | null): Promise<void> {
+  let id = before?.id ?? null;
+  if (next && id) await $global.updateCollectionItem(PARTIES_COLLECTION, { __id: id, ...next });
+  else if (next) id = (await $global.addCollectionItem(PARTIES_COLLECTION, { ...next })).__id;
+  else if (id) await $global.deleteCollectionItem(PARTIES_COLLECTION, id);
+  const touched = new Set([...(before?.party.members ?? []), ...(next?.members ?? [])]);
+  for (const account of touched) {
+    const copy = next?.members.includes(account) ? { id, leader: next.leader, members: next.members } : null;
+    await $global.updateUserState(account, { party: copy });
+  }
+}
+
+export async function readPartyInvites(account: string, now: number): Promise<PartyInvite[]> {
+  return readInvites((await $global.getUserState(account)).partyInvites, now);
+}
+
+export async function writePartyInvites(account: string, invites: PartyInvite[]): Promise<void> {
+  await $global.updateUserState(account, { partyInvites: invites });
+}
+
+export async function partyMember(account: string, now: number): Promise<PartyMemberView> {
+  const state = await $global.getUserState(account);
+  return {
+    account,
+    nickname: typeof state.nickname === "string" ? state.nickname : null,
+    costume: typeof state.costume === "string" ? state.costume : COSTUMES[0].id,
     online: isOnline(state.lastSeenAt, now),
   };
 }
