@@ -5,7 +5,7 @@ import {
   AKM_FIRE_INTERVAL_MS, AKM_RANGE, DEVICE_COUNT, EXIT_RADIUS, MONSTER_STATS, POSSESS_RANGE, RANGE_SLACK,
   SEAL_DURATION_MS, SEAL_RADIUS, SHARD_COUNT, VOTE_DECIDE_HOLD_MS,
 } from "../match/constants";
-import { isActive, isBound } from "../match/lifecycle";
+import { botFillInMs, isActive, isBound } from "../match/lifecycle";
 import { BOSS_ID, interactableNear, type Interactable } from "../match/objectives";
 import type { MatchResult, MonsterKind, PlayerResult, Pose, Possession, PublicMatch, Stage } from "../match/types";
 import { distance } from "../match/view";
@@ -85,6 +85,8 @@ export interface HudState {
   canPossess: boolean;
   nearExit: boolean;
   players: number;
+  // Until the lobby's empty seats go to bots; null outside a waiting lobby.
+  botFillInMs: number | null;
   name: string;
   painAt: number | null;
   error: { code: string; at: number } | null;
@@ -501,6 +503,7 @@ export class MatchView {
         && possessReadyInMs === 0 && this.possessCandidate(match) !== null,
       nearExit: free && !!match && match.objectives.stage === "exit" && !!exit && distance(this.pose, exit) <= EXIT_RADIUS,
       players: match?.players.length ?? 0,
+      botFillInMs: match ? botFillInMs(match, serverNow) : null,
       name: ownName(me),
       painAt: this.painAt,
       error: this.error,

@@ -2,7 +2,7 @@ import {
   AKM_DAMAGE, AKM_FIRE_INTERVAL_MS, AKM_RANGE, EXIT_RADIUS, LINK_DAMAGE_RATIO,
   MONSTER_DEATH_BODY_DAMAGE, MONSTER_STATS, PAIN_RADIUS, RANGE_SLACK,
 } from "./constants";
-import { isActive, isBound } from "./lifecycle";
+import { isActive, isBound, matchHost } from "./lifecycle";
 import { endPossession, expirePossession } from "./possession";
 import {
   RuleViolation, type MatchEvent, type Pose, type Poses, type PublicMatch, type SecretMatch, type Vec2,
@@ -13,7 +13,7 @@ export interface MonsterPoseUpdate { id: string; x: number; z: number; yaw: numb
 
 export function monsterAuthority(match: PublicMatch, secret: SecretMatch, monsterId: string): string | null {
   if (secret.possession?.monsterId === monsterId) return secret.traitor;
-  return match.players.find((p) => isActive(match, p)) ?? null;
+  return matchHost(match);
 }
 
 export function applyMonsterPoses(

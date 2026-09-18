@@ -1,5 +1,5 @@
 import {
-  DEVICE_COUNT, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, SHARD_COUNT,
+  DEVICE_COUNT, LOBBY_FILL_MS, MATCH_PLAYERS, MONSTER_STATS, PLAYER_HP, POSSESS_FIRST_READY_MS, SHARD_COUNT,
 } from "./constants";
 import {
   RuleViolation, type MonsterKind, type MonsterSpawn, type MonsterState, type ObjectiveState, type PlayerStats,
@@ -62,9 +62,36 @@ export function leaveLobby(match: PublicMatch, account: string): void {
   match.players = match.players.filter((p) => p !== account);
 }
 
+// Seats the online lobby adds when people are short. Practice bots ("test-bot-N") are ordinary players.
+export function isBot(account: string): boolean {
+  return /^bot-\d+$/.test(account);
+}
+
+// Fills the empty seats with bots once the lobby has waited LOBBY_FILL_MS; true when it did.
+export function fillWithBots(match: PublicMatch, now: number): boolean {
+  if (botFillInMs(match, now) !== 0) return false;
+  for (let n = 1; match.players.length < MATCH_PLAYERS; n++) {
+    if (!match.players.includes(`bot-${n}`)) match.players.push(`bot-${n}`);
+  }
+  return true;
+}
+
+// How long until bots fill the lobby's empty seats; null when nobody is waiting on that.
+export function botFillInMs(match: PublicMatch, now: number): number | null {
+  if (match.phase !== "lobby" || match.players.length === 0 || match.players.length >= MATCH_PLAYERS) return null;
+  return Math.max(0, match.createdAt + LOBBY_FILL_MS - now);
+}
+
+// The person whose client drives the monsters and the bots: the first human still in play.
+export function matchHost(match: PublicMatch): string | null {
+  return match.players.find((p) => !isBot(p) && isActive(match, p)) ?? null;
+}
+
 export function startMatch(match: PublicMatch, now: number, rng: () => number, spawns: MonsterSpawn[]): SecretMatch {
   if (match.phase !== "lobby" || match.players.length !== MATCH_PLAYERS) throw new RuleViolation("not_playing");
-  const index = Math.min(match.players.length - 1, Math.floor(rng() * match.players.length));
+  // Bots are always adventurers.
+  const candidates = match.players.filter((p) => !isBot(p));
+  const index = Math.min(candidates.length - 1, Math.floor(rng() * candidates.length));
 
   match.phase = "playing";
   match.startedAt = now;
@@ -84,7 +111,7 @@ export function startMatch(match: PublicMatch, now: number, rng: () => number, s
     stats[p] = emptyStats();
   }
   return {
-    traitor: match.players[index], hp, possession: null,
+    traitor: candidates[index], hp, possession: null,
     readyAt: now + POSSESS_FIRST_READY_MS, lastShotAt: {}, stats,
   };
 }

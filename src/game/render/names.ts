@@ -5,7 +5,8 @@ function short(name: string): string {
 // A player's nickname as shown on screen, including your own.
 export function displayName(account: string, me: string): string {
   if (account === me) return ownName(account);
-  const bot = /^test-bot-(\d+)$/.exec(account);
+  // Practice bots ("test-bot-N") and the online lobby's fill bots ("bot-N").
+  const bot = /^(?:test-)?bot-(\d+)$/.exec(account);
   if (bot) return `봇 ${bot[1]}`;
   return short(account);
 }

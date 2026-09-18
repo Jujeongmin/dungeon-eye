@@ -3,6 +3,7 @@ import {
   readActivity, readInvites, type Party, type PartyInvite, type PartyMemberView,
 } from "../../src/game/account/party";
 import { COSTUMES } from "../../src/game/render/costumes";
+import { isBot } from "../../src/game/match/lifecycle";
 import { addResult, readProfile } from "../../src/game/match/profile";
 import {
   RuleViolation, type PlayerResult, type Pose, type Poses, type PublicMatch, type SecretMatch, type SecretRef,
@@ -97,6 +98,7 @@ export async function writePose(roomId: string, account: string, pose: Pose, at:
 
 export async function saveResults(matchId: string, results: PlayerResult[]): Promise<void> {
   for (const result of results) {
+    if (isBot(result.account)) continue;
     await $global.addCollectionItem(RESULTS_COLLECTION, { ...result, matchId });
     const state = await $global.getUserState(result.account);
     await $global.updateUserState(result.account, { profile: addResult(readProfile(state.profile), result) });

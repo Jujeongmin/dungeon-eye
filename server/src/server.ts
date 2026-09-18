@@ -11,7 +11,9 @@ import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants"
 import {
   applyMonsterPoses, monsterAttack, reachExit, shootMonster, type MonsterPoseUpdate,
 } from "../../src/game/match/damage";
-import { createLobby, joinLobby, leaveLobby, monsterSpawnsFor, startMatch } from "../../src/game/match/lifecycle";
+import {
+  createLobby, fillWithBots, isBot, joinLobby, leaveLobby, matchHost, monsterSpawnsFor, startMatch,
+} from "../../src/game/match/lifecycle";
 import { advanceObjectives, operateObjective, skipToStage } from "../../src/game/match/objectives";
 import { markLeft, resolveOutcome, settleResults } from "../../src/game/match/outcome";
 import { releasePossession, startPossession } from "../../src/game/match/possession";
@@ -99,15 +101,17 @@ function requireTestAccount(): void {
 }
 
 // Every in-room request: lock, load, apply rules, settle the clock, save, then notify.
-async function inRoom<T>(work: (ctx: RoomContext) => T | Promise<T>): Promise<T> {
+// `account` is who acts: the caller, or a bot the host is acting for.
+async function inRoom<T>(work: (ctx: RoomContext) => T | Promise<T>, account: string = $sender.account): Promise<T> {
   const roomId = currentRoom();
   return withRoomLock(roomId, async () => {
     const match = await readMatch(roomId);
     if (!match) throw new RuleViolation("unavailable");
     const ctx: RoomContext = {
-      roomId, account: $sender.account, match, secret: await readSecret(match), now: clock(match), events: [],
+      roomId, account, match, secret: await readSecret(match), now: clock(match), events: [],
     };
     const value = await work(ctx);
+    await startWithBots(ctx.match, ctx.now);
     advanceObjectives(ctx.match, null, LEVEL, ctx.now);
     ctx.events.push(...resolveOutcome(ctx.match, ctx.secret, ctx.now));
     await commit(ctx);
@@ -115,6 +119,61 @@ async function inRoom<T>(work: (ctx: RoomContext) => T | Promise<T>): Promise<T>
     return value;
   });
 }
+
+// Once the lobby has waited long enough, bots take the empty seats and the match starts.
+async function startWithBots(match: PublicMatch, now: number): Promise<boolean> {
+  if (!fillWithBots(match, now)) return false;
+  match.secretRef = await createSecret(startMatch(match, now, Math.random, SPAWNS));
+  return true;
+}
+
+// What one seat can do in a match. The public methods run these for the caller; botCall runs
+// the same ones for a bot, on behalf of the host whose client drives the bots.
+const seatActions = {
+  async getMatchState(account: string): Promise<MatchSnapshot> {
+    return inRoom((ctx) => ({
+      roomId: ctx.roomId,
+      serverNow: ctx.now,
+      match: ctx.match,
+      you: privateView(ctx.match, ctx.secret, ctx.account),
+    }), account);
+  },
+
+  async syncMatch(account: string): Promise<void> {
+    await inRoom(() => undefined, account);
+  },
+
+  async reportPose(account: string, pose: unknown): Promise<void> {
+    const roomId = currentRoom();
+    if (!isPose(pose)) throw new RuleViolation("unavailable");
+    await writePose(roomId, account, pose, Date.now());
+  },
+
+  async fireAtMonster(account: string, monsterId: unknown): Promise<void> {
+    const id = requireText(monsterId);
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const poses = await readPoses(ctx.roomId, ctx.match.players);
+      ctx.events.push(...shootMonster(ctx.match, secret, ctx.account, id, poses[ctx.account] ?? null, poses, ctx.now));
+    }, account);
+  },
+
+  async interact(account: string): Promise<void> {
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const pose = await readPose(ctx.roomId, ctx.account);
+      operateObjective(ctx.match, secret, ctx.account, pose, LEVEL, ctx.now);
+    }, account);
+  },
+
+  async escape(account: string): Promise<void> {
+    await inRoom(async (ctx) => {
+      const secret = requireLive(ctx);
+      const pose = await readPose(ctx.roomId, ctx.account);
+      ctx.events.push(...reachExit(ctx.match, secret, ctx.account, pose, LEVEL.exits, ctx.now));
+    }, account);
+  },
+};
 
 async function commit(ctx: RoomContext): Promise<void> {
   const { roomId, match, secret } = ctx;
@@ -344,16 +403,25 @@ export class Server {
   }
 
   async getMatchState(): Promise<MatchSnapshot> {
-    return inRoom((ctx) => ({
-      roomId: ctx.roomId,
-      serverNow: ctx.now,
-      match: ctx.match,
-      you: privateView(ctx.match, ctx.secret, ctx.account),
-    }));
+    return seatActions.getMatchState($sender.account);
   }
 
   async syncMatch(): Promise<void> {
-    await inRoom(() => undefined);
+    await seatActions.syncMatch($sender.account);
+  }
+
+  // The host's client drives the bots: it moves, shoots and uses things for them through here.
+  async botCall(bot: unknown, action: unknown, args: unknown): Promise<unknown> {
+    const account = requireText(bot);
+    if (typeof action !== "string" || !Object.prototype.hasOwnProperty.call(seatActions, action)) {
+      throw new RuleViolation("unavailable");
+    }
+    const match = await readMatch(currentRoom());
+    if (!match || !isBot(account) || !match.players.includes(account) || matchHost(match) !== $sender.account) {
+      throw new RuleViolation("not_authority");
+    }
+    const run = seatActions[action as keyof typeof seatActions] as (who: string, ...rest: unknown[]) => Promise<unknown>;
+    return run(account, ...(Array.isArray(args) ? args : []));
   }
 
   async devAdvanceClock(ms: number): Promise<number> {
@@ -378,9 +446,7 @@ export class Server {
   }
 
   async reportPose(pose: unknown): Promise<void> {
-    const roomId = currentRoom();
-    if (!isPose(pose)) throw new RuleViolation("unavailable");
-    await writePose(roomId, $sender.account, pose, Date.now());
+    await seatActions.reportPose($sender.account, pose);
   }
 
   async reportMonsters(updates: unknown): Promise<void> {
@@ -411,12 +477,7 @@ export class Server {
   }
 
   async fireAtMonster(monsterId: unknown): Promise<void> {
-    const id = requireText(monsterId);
-    await inRoom(async (ctx) => {
-      const secret = requireLive(ctx);
-      const poses = await readPoses(ctx.roomId, ctx.match.players);
-      ctx.events.push(...shootMonster(ctx.match, secret, ctx.account, id, poses[ctx.account] ?? null, poses, ctx.now));
-    });
+    await seatActions.fireAtMonster($sender.account, monsterId);
   }
 
   async attackWithMonster(monsterId: unknown, target: unknown): Promise<void> {
@@ -430,25 +491,24 @@ export class Server {
   }
 
   async interact(): Promise<void> {
-    await inRoom(async (ctx) => {
-      const secret = requireLive(ctx);
-      const pose = await readPose(ctx.roomId, ctx.account);
-      operateObjective(ctx.match, secret, ctx.account, pose, LEVEL, ctx.now);
-    });
+    await seatActions.interact($sender.account);
   }
 
   async escape(): Promise<void> {
-    await inRoom(async (ctx) => {
-      const secret = requireLive(ctx);
-      const pose = await readPose(ctx.roomId, ctx.account);
-      ctx.events.push(...reachExit(ctx.match, secret, ctx.account, pose, LEVEL.exits, ctx.now));
-    });
+    await seatActions.escape($sender.account);
   }
 
   // Platform hook (every 200-1000 ms per active room). Drives the clock-based rules:
-  // plate votes, the seal channel and the deadline. Saves only when something changed.
+  // the lobby's bot fill, plate votes, the seal channel and the deadline. Saves only when something changed.
   async $roomTick(_deltaMillis: number, roomId: string): Promise<void> {
     const peek = await readMatch(roomId);
+    if (peek?.phase === "lobby") {
+      await withRoomLock(roomId, async () => {
+        const match = await readMatch(roomId);
+        if (match && (await startWithBots(match, clock(match)))) await writeMatch(roomId, match);
+      });
+      return;
+    }
     if (!peek || peek.phase !== "playing") return;
     await withRoomLock(roomId, async () => {
       const match = await readMatch(roomId);

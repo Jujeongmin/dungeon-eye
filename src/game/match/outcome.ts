@@ -1,3 +1,4 @@
+import { isBot } from "./lifecycle";
 import { endPossession, expirePossession } from "./possession";
 import {
   RuleViolation, type EndReason, type MatchEvent, type PlayerResult, type PublicMatch, type SecretMatch, type Winner,
@@ -23,6 +24,9 @@ export function resolveOutcome(match: PublicMatch, secret: SecretMatch | null, n
     end = escaped.length > 0
       ? { winner: "adventurers", reason: "escaped", at: now }
       : { winner: "traitor", reason: "wiped", at: now };
+  } else if (!match.players.some((p) => !isBot(p) && !match.dead.includes(p) && !match.escaped.includes(p))) {
+    // Nobody is left to drive the bots, so the match cannot go on.
+    end = { winner: "adventurers", reason: "humans_out", at: now };
   }
   if (!end) return events;
 

@@ -1,6 +1,6 @@
 import { PROTOCOL_VERSION } from "../game/match/constants";
 import type { MonsterPoseUpdate } from "../game/match/damage";
-import { isActive } from "../game/match/lifecycle";
+import { matchHost } from "../game/match/lifecycle";
 import { RULE_ERRORS, type Pose, type PublicMatch, type Stage } from "../game/match/types";
 import type { PrivateView } from "../game/match/view";
 import type { MatchTransport, RoomUser } from "./transport";
@@ -109,6 +109,17 @@ export class MatchClient {
     }
   }
 
+  // Follows a room this client was seated in by someone else: a bot the host drives.
+  async attach(roomId: string): Promise<void> {
+    this.set({ phase: "searching", error: null, roomId });
+    this.listen(roomId);
+    try {
+      await this.refresh();
+    } catch (error) {
+      this.fail(error);
+    }
+  }
+
   async refresh(): Promise<void> {
     if (!this.current.roomId) return;
     const sentAt = this.now();
@@ -121,7 +132,7 @@ export class MatchClient {
 
   host(): string | null {
     const match = this.current.match;
-    return match ? (match.players.find((p) => isActive(match, p)) ?? null) : null;
+    return match ? matchHost(match) : null;
   }
 
   tick(): void {

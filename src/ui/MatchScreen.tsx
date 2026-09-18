@@ -20,6 +20,7 @@ export interface MatchScreenProps {
 const REASON_LABEL = {
   escaped: "살아남은 모험가가 모두 탈출했습니다",
   wiped: "모험가가 모두 쓰러졌습니다",
+  humans_out: "남은 사람이 없어 봇만 남았습니다",
 } as const;
 
 export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
@@ -69,7 +70,10 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
         <div className="overlay"><span className="band">유적으로 내려가는 중… {progress.done}/{progress.total}</span></div>
       )}
       {loadError && <div className="overlay error"><span className="band">불러오기 실패: {loadError}</span></div>}
-      {ready && waiting && <div className="overlay dim"><span className="band">플레이어를 기다리는 중 {hud.players}/4</span></div>}
+      {ready && waiting && <div className="overlay dim"><span className="band">
+            플레이어를 기다리는 중 {hud.players}/4
+            {hud.botFillInMs !== null && ` · ${Math.ceil(hud.botFillInMs / 1000)}초 뒤 봇이 빈자리를 채웁니다`}
+          </span></div>}
       {ready && hud?.phase === "error" && (
         <div className="overlay dim">
           <div className="dark-panel result-panel">

@@ -1,6 +1,7 @@
 export type Phase = "lobby" | "playing" | "ended";
 export type Winner = "adventurers" | "traitor";
-export type EndReason = "escaped" | "wiped";
+// humans_out: only bots are left in play (the traitor, always a person, is out too).
+export type EndReason = "escaped" | "wiped" | "humans_out";
 
 export interface Vec2 { x: number; z: number }
 export interface Pose extends Vec2 { yaw: number }

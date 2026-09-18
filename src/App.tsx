@@ -3,6 +3,7 @@ import { useGameServer } from "@agent8/gameserver";
 import type { Pose } from "./game/match/types";
 import { RUINS, TILE_SIZE, parseLevel } from "./game/rules/levelLayout";
 import { HostDirector } from "./net/hostDirector";
+import { BotCrew } from "./net/botCrew";
 import { MatchClient } from "./net/matchClient";
 import { PRACTICE_ACCOUNT, PracticeSession } from "./net/practice";
 import { Verse8Transport } from "./net/verse8Transport";
@@ -85,24 +86,32 @@ function PracticeMatch({ onExit }: { onExit: () => void }) {
 
 function OnlineMatch({ entry, onExit }: { entry: Entry; onExit: () => void }) {
   const { server, connected } = useGameServer();
-  const [client, setClient] = useState<MatchClient | null>(null);
+  const [seat, setSeat] = useState<{ client: MatchClient; crew: BotCrew } | null>(null);
+  const client = seat?.client ?? null;
 
   useEffect(() => {
     if (!connected) return;
-    const next = new MatchClient(new Verse8Transport(server));
+    const transport = new Verse8Transport(server);
+    const next = new MatchClient(transport);
+    // Drives the lobby's fill bots whenever this client is the host.
+    const crew = new BotCrew(next, transport, layout);
     let live = true;
     void next.join(entry).then(() => {
-      if (live) setClient(next);
+      if (live) setSeat({ client: next, crew });
     });
     return () => {
       live = false;
+      crew.dispose();
       void next.leave();
       next.dispose();
     };
   }, [connected, server, entry]);
 
   const director = useMemo(() => (client ? new HostDirector(client, layout) : null), [client]);
-  const onFrame = useCallback((dt: number, pose: Pose | null) => director?.update(dt, pose), [director]);
+  const onFrame = useCallback((dt: number, pose: Pose | null) => {
+    director?.update(dt, pose);
+    seat?.crew.update(dt);
+  }, [director, seat]);
   if (!client) return <div className="overlay">{connected ? "매치를 찾는 중…" : "Verse8 서버에 연결하는 중…"}</div>;
   return <MatchScreen client={client} onFrame={onFrame} onExit={onExit} />;
 }
