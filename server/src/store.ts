@@ -4,6 +4,7 @@ import {
 } from "../../src/game/account/party";
 import { COSTUMES } from "../../src/game/render/costumes";
 import { isBot } from "../../src/game/match/lifecycle";
+import { readJumpY } from "../../src/game/rules/movement";
 import { addResult, readProfile } from "../../src/game/match/profile";
 import {
   RuleViolation, type PlayerResult, type Pose, type Poses, type PublicMatch, type SecretMatch, type SecretRef,
@@ -93,7 +94,8 @@ export async function readPoses(roomId: string, accounts: string[]): Promise<Pos
 }
 
 export async function writePose(roomId: string, account: string, pose: Pose, at: number): Promise<void> {
-  await $global.updateRoomUserState(roomId, account, { pose: { x: pose.x, z: pose.z, yaw: pose.yaw, at } });
+  const y = readJumpY(pose.y);
+  await $global.updateRoomUserState(roomId, account, { pose: { x: pose.x, z: pose.z, yaw: pose.yaw, y, at } });
 }
 
 export async function saveResults(matchId: string, results: PlayerResult[]): Promise<void> {
