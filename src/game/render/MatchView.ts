@@ -130,6 +130,7 @@ export class MatchView {
   private readonly layout: LevelLayout = parseLevel(RUINS, TILE_SIZE);
   private readonly input: FpsInput;
   private readonly resizeObserver: ResizeObserver;
+  private resizeFrame = 0;
   private readonly lights = new LightPool(this.scene, LIGHT_SLOTS);
   private readonly monsters = new Map<string, MonsterActor>();
   private readonly players = new Map<string, RemotePlayerActor>();
@@ -169,7 +170,11 @@ export class MatchView {
     this.scene.background = new THREE.Color(0x050404);
     this.scene.fog = new THREE.FogExp2(0x050404, 0.07);
     this.scene.add(this.camera);
-    this.resizeObserver = new ResizeObserver(() => this.resize());
+    // Resize on the next frame, not inside the observer callback, so the browser never reports a ResizeObserver loop.
+    this.resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = requestAnimationFrame(() => this.resize());
+    });
     this.resizeObserver.observe(container);
     this.resize();
   }
@@ -241,6 +246,7 @@ export class MatchView {
     cancelAnimationFrame(this.frame);
     this.offPain?.();
     this.resizeObserver.disconnect();
+    cancelAnimationFrame(this.resizeFrame);
     this.input.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();

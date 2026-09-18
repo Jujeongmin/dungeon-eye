@@ -39,6 +39,7 @@ export class MenuScene {
   private readonly clock = new THREE.Clock();
   private readonly lights = new LightPool(this.scene, LIGHT_SLOTS);
   private readonly resizeObserver: ResizeObserver;
+  private resizeFrame = 0;
   private library: ModelLibrary | null = null;
   // One actor per slot, rebuilt when the member in that slot changes.
   private readonly slots: ({ key: string; actor: RemotePlayerActor; label: THREE.Sprite } | null)[] = SLOTS.map(() => null);
@@ -61,7 +62,11 @@ export class MenuScene {
     this.scene.fog = new THREE.FogExp2(0x050404, 0.06);
     this.camera.position.copy(CAMERA_HOME);
     this.camera.lookAt(CAMERA_LOOK);
-    this.resizeObserver = new ResizeObserver(() => this.resize());
+    // Resize on the next frame, not inside the observer callback, so the browser never reports a ResizeObserver loop.
+    this.resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(this.resizeFrame);
+      this.resizeFrame = requestAnimationFrame(() => this.resize());
+    });
     this.resizeObserver.observe(container);
     this.resize();
   }
@@ -127,6 +132,7 @@ export class MenuScene {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();
+    cancelAnimationFrame(this.resizeFrame);
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
