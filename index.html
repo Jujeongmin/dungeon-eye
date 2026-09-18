@@ -5,9 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0a09" />
     <title>Traitor Hunt</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+      }
+
+      /* Shown until React mounts, so the embed never shows an empty rectangle while the bundle loads. */
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #000;
+        color: #f2e8d5;
+        font-family: serif;
+      }
+
+      .boot-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+      }
+
+      .boot-sub {
+        font-size: 13px;
+        color: #a4998a;
+      }
+    </style>
+    <script>
+      // Verse8 embeds the game in an iframe and asks it how big it is (REQUEST_GAME_SIZE).
+      // Without an answer the shell cannot size the frame. This comes from the Verse8 template.
+      (function () {
+        var lastWidth = -1;
+        var lastHeight = -1;
+
+        function reportGameSize(force) {
+          var height = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+          var width = Math.max(document.body.scrollWidth, document.documentElement.scrollWidth);
+          // The shell resizes the frame from this, which resizes us again; report only real changes.
+          if (force !== true && width === lastWidth && height === lastHeight) return;
+          lastWidth = width;
+          lastHeight = height;
+          window.parent.postMessage({ type: "GAME_SIZE_RESPONSE", height: height, width: width }, "*");
+        }
+
+        window.addEventListener("load", function () { reportGameSize(true); });
+        window.addEventListener("resize", function () { reportGameSize(false); });
+        window.addEventListener("message", function (event) {
+          if (event.data && event.data.type === "REQUEST_GAME_SIZE") reportGameSize(true);
+        });
+      })();
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot">
+        <div class="boot-title">TRAITOR HUNT</div>
+        <div class="boot-sub">유적으로 내려가는 중…</div>
+      </div>
+    </div>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
