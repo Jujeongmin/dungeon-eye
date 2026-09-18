@@ -14,17 +14,24 @@ export interface FirstPersonTuning {
   // Hand turns after the IK (radians, in each hand bone's own axes).
   twistLeft: Vec3Like;
   twistRight: Vec3Like;
+  // Points in camera space each elbow bends toward; they decide where the upper arm and the sleeve go.
+  elbowLeft: Vec3Like;
+  elbowRight: Vec3Like;
   // Skin and sleeve brightness; the camera's lamp glares at full strength this close.
   shade: number;
 }
 
 export const FP_DEFAULTS: FirstPersonTuning = {
-  gun: { x: 0.22, y: -0.2, z: -0.45 },
-  hold: { trigger: 0.2, barrel: 0.7, below: 0.035 },
-  head: { x: 0, y: -0.02, z: 0.3 },
-  twistLeft: { x: Math.PI / 2, y: 0, z: 0 },
+  // Fitted by the user in the tuning panel (2026-09-18).
+  gun: { x: 0.15, y: -0.125, z: -0.305 },
+  hold: { trigger: 0.31, barrel: 0.69, below: 0.035 },
+  head: { x: -0.08, y: -0.045, z: 0.195 },
+  twistLeft: { x: 0.038, y: -0.102, z: 0.138 },
   twistRight: { x: 0, y: 0, z: 0 },
-  shade: 0.3,
+  // Chosen by the user from side-by-side shots: down and forward keeps the dark sleeve out of view.
+  elbowLeft: { x: -0.3, y: -1.5, z: 0.5 },
+  elbowRight: { x: 0.6, y: -0.5, z: 0 },
+  shade: 0.05,
 };
 
 export const fpTuning: FirstPersonTuning = structuredClone(FP_DEFAULTS);

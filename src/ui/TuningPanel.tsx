@@ -12,7 +12,7 @@ interface Slider {
 
 const PI = Math.PI;
 
-function axis(label: string, key: "gun" | "head" | "twistLeft" | "twistRight", min: number, max: number, step: number): Slider[] {
+function axis(label: string, key: "gun" | "head" | "twistLeft" | "twistRight" | "elbowLeft" | "elbowRight", min: number, max: number, step: number): Slider[] {
   return (["x", "y", "z"] as const).map((a) => ({
     label: `${label} ${a}`,
     min,
@@ -38,6 +38,8 @@ const GROUPS: { title: string; sliders: Slider[] }[] = [
   { title: "몸(어깨) 위치", sliders: axis("머리", "head", -0.6, 0.6, 0.005) },
   { title: "왼손 회전", sliders: axis("왼손", "twistLeft", -PI, PI, 0.02) },
   { title: "오른손 회전", sliders: axis("오른손", "twistRight", -PI, PI, 0.02) },
+  { title: "왼쪽 팔꿈치 방향", sliders: axis("왼팔꿈치", "elbowLeft", -1.5, 1.5, 0.01) },
+  { title: "오른쪽 팔꿈치 방향", sliders: axis("오른팔꿈치", "elbowRight", -1.5, 1.5, 0.01) },
   {
     title: "팔 밝기",
     sliders: [{ label: "밝기", min: 0.05, max: 1, step: 0.01, get: (t) => t.shade, set: (t, v) => { t.shade = v; } }],

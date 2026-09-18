@@ -25,6 +25,8 @@ export class FirstPersonArms {
   private readonly turn = new THREE.Quaternion();
   private readonly euler = new THREE.Euler();
   private readonly offset = new THREE.Vector3();
+  private readonly elbowLeft = new THREE.Vector3();
+  private readonly elbowRight = new THREE.Vector3();
   // Each material with its own colour, so the shade can change live.
   private readonly tinted: { material: THREE.MeshStandardMaterial; base: THREE.Color }[];
   private shade = Number.NaN;
@@ -62,6 +64,8 @@ export class FirstPersonArms {
     this.tinted = ownMaterials(model).map((material) => {
       // The pack marks skin and cloth fully metallic, which up close shows only the lamp's glare.
       material.metalness = 0;
+      // From this close you look into the open sleeve; drawn one-sided, its inside showed the wall.
+      material.side = THREE.DoubleSide;
       return { material, base: material.color.clone() };
     });
     model.scale.setScalar(PLAYER_HEIGHT / skinnedHeight(model));
@@ -89,8 +93,14 @@ export class FirstPersonArms {
     this.applyShade();
     this.mixer.update(dt);
     this.placeHead();
-    reachWithArm(this.right.upper, this.right.lower, this.right.hand, grips.right);
-    reachWithArm(this.left.upper, this.left.lower, this.left.hand, grips.left);
+    const camera = this.object.parent;
+    const { elbowLeft: el, elbowRight: er } = fpTuning;
+    this.elbowLeft.set(el.x, el.y, el.z);
+    this.elbowRight.set(er.x, er.y, er.z);
+    camera?.localToWorld(this.elbowLeft);
+    camera?.localToWorld(this.elbowRight);
+    reachWithArm(this.right.upper, this.right.lower, this.right.hand, grips.right, this.elbowRight);
+    reachWithArm(this.left.upper, this.left.lower, this.left.hand, grips.left, this.elbowLeft);
     const { twistRight: r, twistLeft: l } = fpTuning;
     this.right.hand.quaternion.multiply(this.turn.setFromEuler(this.euler.set(r.x, r.y, r.z)));
     this.left.hand.quaternion.multiply(this.turn.setFromEuler(this.euler.set(l.x, l.y, l.z)));

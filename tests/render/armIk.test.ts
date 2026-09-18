@@ -41,3 +41,28 @@ describe("reachWithArm", () => {
     expect(worldOf(hand).length()).toBeCloseTo(2, 2);
   });
 });
+
+describe("reachWithArm with an elbow hint", () => {
+  it("keeps the wrist on the target and swings the elbow toward the hint", () => {
+    for (const side of [1, -1]) {
+      const { upper, lower, hand } = arm();
+      const target = new THREE.Vector3(0.6, 0.5, -0.4);
+      const hint = new THREE.Vector3(0, -3, 0).add(new THREE.Vector3(side * 3, 0, 0));
+      const plain = arm();
+      reachWithArm(plain.upper, plain.lower, plain.hand, target);
+      reachWithArm(upper, lower, hand, target, hint);
+      expect(worldOf(hand).distanceTo(target)).toBeLessThan(1e-4);
+      // The grip the hand had is kept: only the elbow moves.
+      const q = (o: THREE.Object3D) => o.getWorldQuaternion(new THREE.Quaternion());
+      expect(Math.abs(q(hand).dot(q(plain.hand)))).toBeGreaterThan(0.9999);
+      // The elbow ends on the hint's side of the shoulder-to-wrist line.
+      const shoulder = worldOf(upper);
+      const along = target.clone().sub(shoulder).normalize();
+      const off = (p: THREE.Vector3) => {
+        const v = p.clone().sub(shoulder);
+        return v.sub(along.clone().multiplyScalar(v.dot(along))).normalize();
+      };
+      expect(off(worldOf(lower)).dot(off(hint))).toBeGreaterThan(0.99);
+    }
+  });
+});
