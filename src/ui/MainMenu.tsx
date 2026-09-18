@@ -44,13 +44,16 @@ export function MainMenu({
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  // Quick start was pressed without a nickname: start as soon as one is saved.
+  const [startAfterName, setStartAfterName] = useState(false);
   const [inviteProblem, setInviteProblem] = useState<string | null>(null);
   const name = nickname ?? ownName(account);
   const members = partyView?.party?.members ?? [];
   const inParty = members.length > 0;
   const leading = partyView?.party?.leader === account;
   const partyBusy = members.some((m) => m.account !== account && (!m.online || m.activity !== "menu"));
-  const onlineReady = onlineAvailable && nickname !== null && (!inParty || (leading && !partyBusy));
+  // A nickname is asked for when you start, not before: practice and the menu work without one.
+  const onlineReady = onlineAvailable && !!onSaveNickname && (!inParty || (leading && !partyBusy));
   const requests = friendsView?.incoming.length ?? 0;
   const onlineNote = !onlineAvailable
     ? "빠른 시작은 Verse8 서버를 연결한 뒤 열립니다."
@@ -102,6 +105,15 @@ export function MainMenu({
     else start();
   };
 
+  const quickStart = () => {
+    if (nickname !== null) {
+      go(onOnline);
+      return;
+    }
+    setStartAfterName(true);
+    setRenaming(true);
+  };
+
   useEffect(() => {
     if (partyCall) go(onFollowParty);
     // Once per call: keyed on the room, and `leaving` stops repeats.
@@ -141,7 +153,7 @@ export function MainMenu({
 
       <nav className="menu-left">
         <h1>TRAITOR HUNT</h1>
-        <button type="button" className="brush-button" onClick={() => go(onOnline)} disabled={!onlineReady || leaving}>
+        <button type="button" className="brush-button" onClick={quickStart} disabled={!onlineReady || leaving}>
           {inParty ? `빠른 시작 (파티 ${members.length}명)` : "빠른 시작"}
         </button>
         <button type="button" className="brush-button" onClick={() => go(onPractice)} disabled={leaving}>연습 (봇 3명)</button>
@@ -158,13 +170,22 @@ export function MainMenu({
           account={account}
           party={party}
           partyView={partyView}
+          needsNickname={!!onSaveNickname && nickname === null}
+          onPickNickname={() => setRenaming(true)}
         />}
 
-      {onSaveNickname && (nickname === null || renaming) && (
+      {onSaveNickname && renaming && (
         <NicknamePanel
           current={nickname}
-          onSave={onSaveNickname}
-          onClose={nickname === null ? undefined : () => setRenaming(false)}
+          purpose={startAfterName ? "start" : nickname === null ? "first" : "rename"}
+          onSave={async (next) => {
+            await onSaveNickname(next);
+            if (startAfterName) go(onOnline);
+          }}
+          onClose={() => {
+            setRenaming(false);
+            setStartAfterName(false);
+          }}
         />
       )}
 

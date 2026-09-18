@@ -12,6 +12,9 @@ interface FriendsPanelProps {
   account: string;
   party: PartyClient | null;
   partyView: PartyView | null;
+  // Friends find each other by nickname, so adding one needs yours first.
+  needsNickname: boolean;
+  onPickNickname: () => void;
 }
 
 function nameOf(entry: FriendEntry): string {
@@ -19,7 +22,9 @@ function nameOf(entry: FriendEntry): string {
 }
 
 // Right-hand side drawer: add a friend by nickname, answer requests, see who is online.
-export function FriendsPanel({ onClose, client, view, account, party, partyView }: FriendsPanelProps) {
+export function FriendsPanel({
+  onClose, client, view, account, party, partyView, needsNickname, onPickNickname,
+}: FriendsPanelProps) {
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -81,14 +86,20 @@ export function FriendsPanel({ onClose, client, view, account, party, partyView 
         <h2>친구</h2>
         <button type="button" className="text-button" onClick={onClose}>닫기</button>
       </header>
+      {client && needsNickname && (
+        <p className="note">
+          친구를 추가하려면 먼저 닉네임을 정하세요.{" "}
+          <button type="button" className="text-button" onClick={onPickNickname}>닉네임 정하기</button>
+        </p>
+      )}
       <form className="friend-add" onSubmit={add}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="닉네임으로 친구 추가"
-          disabled={!client}
+          disabled={!client || needsNickname}
         />
-        <button type="submit" className="text-button" disabled={!client || busy !== null || query.trim() === ""}>추가</button>
+        <button type="submit" className="text-button" disabled={!client || needsNickname || busy !== null || query.trim() === ""}>추가</button>
       </form>
       {notice && <p className="friend-notice">{notice}</p>}
 
