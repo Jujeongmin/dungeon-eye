@@ -1,3 +1,6 @@
+import {
+  acceptFriend, removeFriend, requestFriend, type FriendSide, type FriendsView,
+} from "../../src/game/account/friends";
 import { parseNickname, type AccountView } from "../../src/game/account/nickname";
 import { MATCH_PLAYERS, PROTOCOL_VERSION } from "../../src/game/match/constants";
 import {
@@ -14,9 +17,9 @@ import { privateView, type PrivateView } from "../../src/game/match/view";
 import { stepVote } from "../../src/game/match/vote";
 import { RUINS, TILE_SIZE, parseLevel } from "../../src/game/rules/levelLayout";
 import {
-  claimNickname, createSecret, deleteSecret, isPose, listLobbies, newRoomId, readMatch, readNickname, readPose,
-  readPoses, readSecret, saveResults, withMatchmakingLock, withNicknameLock, withRoomLock, writeMatch, writePose,
-  writeSecret,
+  claimNickname, createSecret, deleteSecret, findNickname, friendEntry, isPose, listLobbies, markSeen, newRoomId,
+  readFriendSide, readMatch, readNickname, readPose, readPoses, readSecret, saveResults, withFriendsLock,
+  withMatchmakingLock, withNicknameLock, withRoomLock, writeFriendSide, writeMatch, writePose, writeSecret,
 } from "./store";
 
 const LEVEL = parseLevel(RUINS, TILE_SIZE);
@@ -51,6 +54,20 @@ function currentRoom(): string {
 function requireText(value: unknown): string {
   if (typeof value !== "string" || value.length === 0 || value.length > 128) throw new RuleViolation("unavailable");
   return value;
+}
+
+// Loads both accounts' friend lists, applies a rule to them and saves whichever side changed.
+async function betweenFriends<T>(other: string, rule: (me: FriendSide, them: FriendSide) => T): Promise<T> {
+  const account = $sender.account;
+  return withFriendsLock(async () => {
+    const me = await readFriendSide(account);
+    const them = await readFriendSide(other);
+    const before = [JSON.stringify(me.lists), JSON.stringify(them.lists)];
+    const value = rule(me, them);
+    if (JSON.stringify(me.lists) !== before[0]) await writeFriendSide(me);
+    if (JSON.stringify(them.lists) !== before[1]) await writeFriendSide(them);
+    return value;
+  });
 }
 
 function requireLive(ctx: RoomContext): SecretMatch {
@@ -131,6 +148,37 @@ export class Server {
     const account = $sender.account;
     await withNicknameLock(() => claimNickname(account, key, name));
     return { account, nickname: name };
+  }
+
+  // Marks you online (the menu calls it every HEARTBEAT_MS) and returns your lists with names and presence.
+  async syncFriends(): Promise<FriendsView> {
+    const account = $sender.account;
+    const now = Date.now();
+    await markSeen(account, now);
+    const { lists } = await readFriendSide(account);
+    const entries = (accounts: string[]) => Promise.all(accounts.map((a) => friendEntry(a, now)));
+    return { friends: await entries(lists.friends), incoming: await entries(lists.incoming), outgoing: await entries(lists.outgoing) };
+  }
+
+  async requestFriend(nickname: unknown): Promise<{ status: "requested" | "accepted" }> {
+    if (!(await readNickname($sender.account))) throw new RuleViolation("unavailable");
+    let key: string;
+    try {
+      key = parseNickname(nickname).key;
+    } catch {
+      throw new RuleViolation("friend_not_found");
+    }
+    const target = await findNickname(key);
+    if (!target) throw new RuleViolation("friend_not_found");
+    return { status: await betweenFriends(target.account, requestFriend) };
+  }
+
+  async acceptFriend(account: unknown): Promise<void> {
+    await betweenFriends(requireText(account), acceptFriend);
+  }
+
+  async removeFriend(account: unknown): Promise<void> {
+    await betweenFriends(requireText(account), removeFriend);
   }
 
   async findMatch(): Promise<{ roomId: string }> {

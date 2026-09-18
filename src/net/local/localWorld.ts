@@ -3,6 +3,7 @@ export type Json = Record<string, any>;
 export type WorldEvent =
   | { kind: "roomState"; roomId: string; state: Json }
   | { kind: "roomUsers"; roomId: string; users: Json[] }
+  | { kind: "userState"; account: string; state: Json }
   | { kind: "message"; roomId: string; to: string | null; type: string; message: unknown };
 
 interface RoomRecord {
@@ -44,6 +45,7 @@ export class LocalWorld {
   private readonly listeners = new Set<(event: WorldEvent) => void>();
   private readonly dirtyRooms = new Set<string>();
   private readonly dirtyUsers = new Set<string>();
+  private readonly dirtyAccounts = new Set<string>();
   private pendingMessages: WorldEvent[] = [];
   private seq = 0;
 
@@ -182,6 +184,7 @@ export class LocalWorld {
         const state = this.userStates.get(user) ?? {};
         merge(state, patch);
         this.userStates.set(user, state);
+        this.dirtyAccounts.add(user);
         return copy(state);
       },
       addCollectionItem: async (collectionId: string, item: Json) => {
@@ -234,9 +237,13 @@ export class LocalWorld {
       const users = [...(this.rooms.get(roomId)?.users.entries() ?? [])].map(([account, state]) => ({ account, ...copy(state) }));
       events.push({ kind: "roomUsers", roomId, users });
     }
+    for (const account of this.dirtyAccounts) {
+      events.push({ kind: "userState", account, state: copy(this.userStates.get(account) ?? {}) });
+    }
     events.push(...this.pendingMessages);
     this.dirtyRooms.clear();
     this.dirtyUsers.clear();
+    this.dirtyAccounts.clear();
     this.pendingMessages = [];
     for (const event of events) for (const listener of this.listeners) listener(event);
   }

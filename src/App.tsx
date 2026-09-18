@@ -10,6 +10,7 @@ import { MatchScreen } from "./ui/MatchScreen";
 import { ModelGallery, galleryEnabled } from "./ui/ModelGallery";
 import { MainMenu } from "./ui/MainMenu";
 import { useAccount } from "./ui/useAccount";
+import { useFriends } from "./ui/useFriends";
 
 type Mode = "title" | "practice" | "online";
 
@@ -25,6 +26,7 @@ export default function App() {
     [connected, server],
   );
   const { view, failed, save } = useAccount(menuTransport);
+  const friends = useFriends(menuTransport);
   if (galleryEnabled()) return <ModelGallery />;
   if (mode === "practice") return <PracticeMatch onExit={toTitle} />;
   if (mode === "online") return <OnlineMatch onExit={toTitle} />;
@@ -34,6 +36,8 @@ export default function App() {
       nickname={view?.nickname ?? null}
       onSaveNickname={view ? save : null}
       accountFailed={failed}
+      friends={friends.client}
+      friendsView={friends.view}
       onPractice={() => setMode("practice")}
       onOnline={() => setMode("online")}
       onlineAvailable={ONLINE_AVAILABLE}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import type { FriendsView } from "../game/account/friends";
 import { MenuScene } from "../game/render/MenuScene";
 import { ownName } from "../game/render/names";
+import type { FriendsClient } from "../net/friends";
 import { FriendsPanel } from "./FriendsPanel";
 import { NicknamePanel } from "./NicknamePanel";
 import { myCostume, onMyCostume } from "./profile";
@@ -13,6 +15,9 @@ interface MainMenuProps {
   // Null until the server account has loaded.
   onSaveNickname: ((nickname: string) => Promise<void>) | null;
   accountFailed: boolean;
+  // Null while offline.
+  friends: FriendsClient | null;
+  friendsView: FriendsView | null;
   onPractice: () => void;
   onOnline: () => void;
   onlineAvailable: boolean;
@@ -21,7 +26,7 @@ interface MainMenuProps {
 type Sheet = "none" | "settings" | "help";
 
 export function MainMenu({
-  account, nickname, onSaveNickname, accountFailed, onPractice, onOnline, onlineAvailable,
+  account, nickname, onSaveNickname, accountFailed, friends, friendsView, onPractice, onOnline, onlineAvailable,
 }: MainMenuProps) {
   const stage = useRef<HTMLDivElement>(null);
   const scene = useRef<MenuScene | null>(null);
@@ -33,6 +38,7 @@ export function MainMenu({
   const [renaming, setRenaming] = useState(false);
   const name = nickname ?? ownName(account);
   const onlineReady = onlineAvailable && nickname !== null;
+  const requests = friendsView?.incoming.length ?? 0;
   const onlineNote = !onlineAvailable
     ? "빠른 시작은 Verse8 서버를 연결한 뒤 열립니다."
     : accountFailed
@@ -84,7 +90,9 @@ export function MainMenu({
       </div>
 
       <div className="menu-corner">
-        <button type="button" className="brush-button small" onClick={() => setFriendsOpen((v) => !v)}>친구</button>
+        <button type="button" className="brush-button small" onClick={() => setFriendsOpen((v) => !v)}>
+          친구{requests > 0 && <span className="badge">{requests}</span>}
+        </button>
         <button type="button" className="brush-button small" onClick={() => setSheet("settings")}>설정</button>
       </div>
 
@@ -98,7 +106,7 @@ export function MainMenu({
         {onlineNote && <p className="note">{onlineNote}</p>}
       </nav>
 
-      {friendsOpen && <FriendsPanel onClose={() => setFriendsOpen(false)} online={onlineAvailable} />}
+      {friendsOpen && <FriendsPanel onClose={() => setFriendsOpen(false)} client={friends} view={friendsView} />}
 
       {onSaveNickname && (nickname === null || renaming) && (
         <NicknamePanel

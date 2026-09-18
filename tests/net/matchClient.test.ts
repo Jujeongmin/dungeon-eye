@@ -143,6 +143,7 @@ describe("MatchClient", () => {
       subscribeRoomState: () => () => {},
       subscribeRoomUsers: () => () => {},
       onRoomMessage: () => () => {},
+      subscribeMyState: () => () => {},
     };
     const client = new MatchClient(transport);
     await client.join();

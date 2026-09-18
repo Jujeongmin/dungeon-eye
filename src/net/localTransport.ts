@@ -47,4 +47,10 @@ export class LocalTransport implements MatchTransport {
       }
     });
   }
+
+  subscribeMyState(cb: (state: Record<string, unknown>) => void): () => void {
+    return this.world.subscribe((e) => {
+      if (e.kind === "userState" && e.account === this.account) cb(e.state);
+    });
+  }
 }

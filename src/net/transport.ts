@@ -15,4 +15,6 @@ export interface MatchTransport {
   subscribeRoomState(roomId: string, cb: (state: Record<string, unknown>) => void): () => void;
   subscribeRoomUsers(roomId: string, cb: (users: RoomUser[]) => void): () => void;
   onRoomMessage(roomId: string, type: string, cb: (message: unknown) => void): () => void;
+  // Your own account's server state (nickname, friend lists), pushed whenever it changes.
+  subscribeMyState(cb: (state: Record<string, unknown>) => void): () => void;
 }

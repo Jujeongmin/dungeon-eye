@@ -2,7 +2,8 @@ import type { GameServer } from "@agent8/gameserver";
 import type { CallOptions, MatchTransport, RoomUser } from "./transport";
 
 export type Verse8Server = Pick<
-  GameServer, "account" | "remoteFunction" | "subscribeRoomState" | "subscribeRoomAllUserStates" | "onRoomMessage"
+  GameServer,
+  "account" | "remoteFunction" | "subscribeRoomState" | "subscribeRoomAllUserStates" | "onRoomMessage" | "subscribeGlobalMyState"
 >;
 
 export class Verse8Transport implements MatchTransport {
@@ -26,5 +27,9 @@ export class Verse8Transport implements MatchTransport {
 
   onRoomMessage(roomId: string, type: string, cb: (message: unknown) => void): () => void {
     return this.server.onRoomMessage(roomId, type, cb);
+  }
+
+  subscribeMyState(cb: (state: Record<string, unknown>) => void): () => void {
+    return this.server.subscribeGlobalMyState(cb);
   }
 }

@@ -74,6 +74,18 @@ describe("LocalTransport", () => {
     expect(users.at(-1)).toMatchObject([{ account: "test-a", pose: { x: 1, z: 2, yaw: 0 } }]);
     expect(states.at(-1)).toMatchObject({ roomId });
   });
+
+  it("passes only its own account state", async () => {
+    const world = new LocalWorld(new Server());
+    const a = new LocalTransport(world, "test-a");
+    const b = new LocalTransport(world, "test-b");
+    const mine: Record<string, unknown>[] = [];
+    a.subscribeMyState((s) => mine.push(s));
+    await b.call("setNickname", ["Seeker"]);
+    expect(mine).toEqual([]);
+    await a.call("setNickname", ["Hunter"]);
+    expect(mine.at(-1)).toMatchObject({ nickname: "Hunter" });
+  });
 });
 
 describe("Verse8Transport", () => {
@@ -85,6 +97,7 @@ describe("Verse8Transport", () => {
       subscribeRoomState: vi.fn(() => off),
       subscribeRoomAllUserStates: vi.fn(() => off),
       onRoomMessage: vi.fn(() => off),
+      subscribeGlobalMyState: vi.fn(() => off),
     };
     const t = new Verse8Transport(server as unknown as Verse8Server);
     expect(t.account).toBe("0xabc");
@@ -94,6 +107,8 @@ describe("Verse8Transport", () => {
     expect(t.subscribeRoomState("r", cb)).toBe(off);
     expect(t.subscribeRoomUsers("r", cb)).toBe(off);
     expect(t.onRoomMessage("r", "pain", cb)).toBe(off);
+    expect(t.subscribeMyState(cb)).toBe(off);
+    expect(server.subscribeGlobalMyState).toHaveBeenCalledWith(cb);
     expect(server.subscribeRoomState).toHaveBeenCalledWith("r", cb);
     expect(server.subscribeRoomAllUserStates).toHaveBeenCalledWith("r", cb);
     expect(server.onRoomMessage).toHaveBeenCalledWith("r", "pain", cb);

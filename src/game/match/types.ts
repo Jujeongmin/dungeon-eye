@@ -130,6 +130,7 @@ export const RULE_ERRORS = [
   "not_authority", "stunned", "no_target", "not_at_exit", "match_full",
   "nothing_here", "need_shards", "exit_locked", "sealed", "bound",
   "nickname_invalid", "nickname_taken",
+  "friend_not_found", "friend_self", "already_friends", "friend_limit", "request_limit", "no_request",
 ] as const;
 
 export type RuleError = (typeof RULE_ERRORS)[number];

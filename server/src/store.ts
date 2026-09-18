@@ -1,3 +1,4 @@
+import { isOnline, readFriendLists, type FriendEntry, type FriendSide } from "../../src/game/account/friends";
 import { addResult, readProfile } from "../../src/game/match/profile";
 import {
   RuleViolation, type PlayerResult, type Pose, type Poses, type PublicMatch, type SecretMatch, type SecretRef,
@@ -133,4 +134,29 @@ export async function claimNickname(account: string, key: string, name: string):
 export async function readNickname(account: string): Promise<string | null> {
   const nickname: unknown = (await $global.getUserState(account)).nickname;
   return typeof nickname === "string" ? nickname : null;
+}
+
+export function withFriendsLock<T>(fn: () => Promise<T>): Promise<T> {
+  return $lock("de-friends", fn);
+}
+
+export async function readFriendSide(account: string): Promise<FriendSide> {
+  return { account, lists: readFriendLists((await $global.getUserState(account)).friendLists) };
+}
+
+export async function writeFriendSide(side: FriendSide): Promise<void> {
+  await $global.updateUserState(side.account, { friendLists: side.lists });
+}
+
+export async function markSeen(account: string, now: number): Promise<void> {
+  await $global.updateUserState(account, { lastSeenAt: now });
+}
+
+export async function friendEntry(account: string, now: number): Promise<FriendEntry> {
+  const state = await $global.getUserState(account);
+  return {
+    account,
+    nickname: typeof state.nickname === "string" ? state.nickname : null,
+    online: isOnline(state.lastSeenAt, now),
+  };
 }
