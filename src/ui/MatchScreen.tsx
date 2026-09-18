@@ -4,6 +4,7 @@ import { MatchView, type HudState } from "../game/render/MatchView";
 import type { MatchClient } from "../net/matchClient";
 import { displayName } from "../game/render/names";
 import { Hud } from "./Hud";
+import { TuningPanel } from "./TuningPanel";
 
 const JOIN_ERROR: Record<string, string> = {
   party_busy: "파티원이 아직 게임 중이에요",
@@ -59,6 +60,21 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
     if (result && document.pointerLockElement) document.exitPointerLock();
   }, [result]);
 
+  // Dev builds (the editor preview included): the backquote key opens the first-person tuning sliders.
+  const [tuning, setTuning] = useState(false);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const toggle = (e: KeyboardEvent) => {
+      if (e.code !== "Backquote") return;
+      setTuning((open) => {
+        if (!open && document.pointerLockElement) document.exitPointerLock();
+        return !open;
+      });
+    };
+    window.addEventListener("keydown", toggle);
+    return () => window.removeEventListener("keydown", toggle);
+  }, []);
+
   const me = client.account;
   const mine = hud?.results?.find((r) => r.account === me) ?? null;
   const waiting = hud && (hud.phase === "searching" || hud.phase === "lobby");
@@ -66,6 +82,7 @@ export function MatchScreen({ client, onFrame, onExit }: MatchScreenProps) {
   return (
     <div className="app" ref={host}>
       {ready && hud && !result && <Hud hud={hud} now={now} />}
+      {tuning && <TuningPanel onClose={() => setTuning(false)} />}
       {!ready && !loadError && (
         <div className="overlay"><span className="band">유적으로 내려가는 중… {progress.done}/{progress.total}</span></div>
       )}

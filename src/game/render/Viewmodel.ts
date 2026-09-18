@@ -1,12 +1,9 @@
 import * as THREE from "three";
 import type { Grips } from "./FirstPersonArms";
+import { fpTuning } from "./firstPersonTuning";
 
-const REST = new THREE.Vector3(0.22, -0.2, -0.45);
 export const WEAPON_LENGTH = 0.75;
 export const WEAPON_ROTATION = new THREE.Euler(0, Math.PI, 0);
-// Where your hands hold the rifle, as fractions of its length from the stock, and how far below
-// its centre line (metres). Fitted by eye.
-const HOLD = { trigger: 0.2, barrel: 0.7, below: 0.035 } as const;
 
 export class Viewmodel {
   private readonly root = new THREE.Group();
@@ -32,7 +29,7 @@ export class Viewmodel {
     this.box.setFromObject(weapon);
     this.flash.position.set(0, 0.05, -WEAPON_LENGTH * 0.8);
     this.root.add(this.flash);
-    this.root.position.copy(REST);
+    this.root.position.set(fpTuning.gun.x, fpTuning.gun.y, fpTuning.gun.z);
     camera.add(this.root);
   }
 
@@ -51,9 +48,10 @@ export class Viewmodel {
     const b = this.box;
     const length = b.max.z - b.min.z;
     const x = (b.min.x + b.max.x) / 2;
-    const y = (b.min.y + b.max.y) / 2 - HOLD.below;
-    this.root.localToWorld(out.right.set(x, y, b.max.z - length * HOLD.trigger));
-    this.root.localToWorld(out.left.set(x, y, b.max.z - length * HOLD.barrel));
+    const { hold } = fpTuning;
+    const y = (b.min.y + b.max.y) / 2 - hold.below;
+    this.root.localToWorld(out.right.set(x, y, b.max.z - length * hold.trigger));
+    this.root.localToWorld(out.left.set(x, y, b.max.z - length * hold.barrel));
     return out;
   }
 
@@ -63,7 +61,8 @@ export class Viewmodel {
     this.flash.intensity = this.flashLeft > 0 ? 8 : 0;
     if (moving) this.bobPhase += dt * 9;
     const bob = moving ? Math.sin(this.bobPhase) * 0.012 : 0;
-    this.root.position.set(REST.x, REST.y + bob - this.kick * 0.01, REST.z + this.kick * 0.05);
+    const rest = fpTuning.gun;
+    this.root.position.set(rest.x, rest.y + bob - this.kick * 0.01, rest.z + this.kick * 0.05);
     this.root.rotation.x = this.kick * 0.06;
   }
 }
