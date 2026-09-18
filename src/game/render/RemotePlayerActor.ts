@@ -196,6 +196,8 @@ export class RemotePlayerActor {
     const dz = pose.z - p.z;
     p.x += dx * k;
     p.z += dz * k;
+    // Jumps arrive a few samples per arc; the same easing keeps them smooth.
+    p.y += ((this.dead ? 0 : (pose.y ?? 0)) - p.y) * k;
     this.object.rotation.y = pose.yaw + Math.PI;
     if (status === "dead") this.dead = true;
     const a = this.animated;

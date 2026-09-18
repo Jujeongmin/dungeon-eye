@@ -4,7 +4,8 @@ export type Winner = "adventurers" | "traitor";
 export type EndReason = "escaped" | "wiped" | "humans_out";
 
 export interface Vec2 { x: number; z: number }
-export interface Pose extends Vec2 { yaw: number }
+// y: how high the player has jumped. Only drawn, never used by a rule; missing means standing.
+export interface Pose extends Vec2 { yaw: number; y?: number }
 export type Poses = Record<string, Pose | null>;
 
 export type MonsterKind = "zombie" | "boss";

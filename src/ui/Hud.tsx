@@ -177,7 +177,7 @@ export function Hud({ hud, now }: { hud: HudState; now: number }) {
       {error && <div className="hud-error band">{error}</div>}
       {inside && !hud.possession && <div className="crosshair" />}
       <div className="hint band">
-        클릭해서 조작 · WASD 이동 · 클릭 사격 · E 상호작용 · F 탈출{hud.role === "traitor" ? " · Q 빙의 · R 해제" : ""} · 투표 때 발판에 서서 배신자 지목
+        클릭해서 조작 · WASD 이동 · 스페이스 점프 · 클릭 사격 · E 상호작용 · F 탈출{hud.role === "traitor" ? " · Q 빙의 · R 해제" : ""} · 투표 때 발판에 서서 배신자 지목
       </div>
     </>
   );

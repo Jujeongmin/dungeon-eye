@@ -12,7 +12,9 @@ import { distance } from "../match/view";
 import { tallyPlates, votesNeeded } from "../match/vote";
 import { ZOMBIE_HEIGHT, ZOMBIE_RADIUS, resolveShot, type HitTarget, type Ray3 } from "../rules/combat";
 import { RUINS, TILE_SIZE, parseLevel, solidWith, spawnPoint, type LevelLayout } from "../rules/levelLayout";
-import { EYE_HEIGHT, applyLook, stepPlayer, type SolidTest } from "../rules/movement";
+import {
+  EYE_HEIGHT, GROUNDED, applyLook, stepJump, stepPlayer, type Airborne, type SolidTest,
+} from "../rules/movement";
 import { FpsInput } from "./FpsInput";
 import { LightPool } from "./lightPool";
 import { MonsterActor, type MonsterLook } from "./MonsterActor";
@@ -20,6 +22,7 @@ import { OBJECTIVE_MODELS, ObjectiveProps } from "./ObjectiveProps";
 import { RemotePlayerActor, type PlayerStatus } from "./RemotePlayerActor";
 import { LEVEL_MODELS, buildLevelScene } from "./levelScene";
 import { Viewmodel } from "./Viewmodel";
+import { FirstPersonArms, type Grips } from "./FirstPersonArms";
 import { costumeForSeat } from "./costumes";
 import { displayName, ownName } from "./names";
 import { playScream, playThud } from "./scream";
@@ -144,7 +147,12 @@ export class MatchView {
   private library: ModelLibrary | null = null;
   private props: ObjectiveProps | null = null;
   private viewmodel: Viewmodel | null = null;
+  // Built once your seat is known, in the costume the others see you in.
+  private arms: FirstPersonArms | null = null;
+  private armsTried = false;
+  private readonly grips: Grips = { right: new THREE.Vector3(), left: new THREE.Vector3() };
   private pose: Pose;
+  private air: Airborne = GROUNDED;
   private yaw = 0;
   private pitch = 0;
   private spawned = false;
@@ -287,6 +295,10 @@ export class MatchView {
     } else if (active) {
       this.pose = { ...this.pose, yaw: this.yaw };
     }
+    // Space jumps: only the body and camera rise, so a bound or possessing player stays put.
+    const jump = this.input.consumePress("Space");
+    this.air = active && !possession && !bound ? stepJump(this.air, jump, dt) : GROUNDED;
+    this.pose = { ...this.pose, y: this.air.y };
     if (match) this.handleActions(match, state, possession, active, bound);
     if (active && !possession) this.client.reportPose(this.pose);
     this.options.onFrame?.(dt, active ? this.pose : null);
@@ -297,9 +309,21 @@ export class MatchView {
       this.props?.update(match, now, dt, match.players.map((p) => displayName(p, me)));
       this.placeCamera(match, possession);
     }
-    const moving = !bound && (move.forward !== 0 || move.strafe !== 0);
+    const moving = !bound && this.air.y === 0 && (move.forward !== 0 || move.strafe !== 0);
     this.viewmodel?.setVisible(active && !possession);
     this.viewmodel?.update(dt, moving);
+    if (match && !this.armsTried && this.library && match.players.includes(me)) {
+      this.armsTried = true;
+      this.arms = FirstPersonArms.create(
+        this.camera, this.library.instance("explorer"), this.library.get("explorer").animations,
+        costumeForSeat(match.players.indexOf(me)),
+      );
+    }
+    if (this.arms && this.viewmodel) {
+      this.arms.setVisible(active && !possession);
+      this.camera.updateMatrixWorld(true);
+      this.arms.update(dt, this.viewmodel.grips(this.grips));
+    }
 
     this.lights.update(this.camera.position);
 
@@ -465,7 +489,7 @@ export class MatchView {
   private placeCamera(match: PublicMatch, possession: Possession | null): void {
     const monster = possession ? match.monsters[possession.monsterId] : undefined;
     if (monster) this.camera.position.set(monster.x, MONSTER_EYE, monster.z);
-    else this.camera.position.set(this.pose.x, EYE_HEIGHT, this.pose.z);
+    else this.camera.position.set(this.pose.x, EYE_HEIGHT + (this.pose.y ?? 0), this.pose.z);
     const shake = this.shakeUntil - performance.now();
     if (shake > 0) {
       const size = SHAKE_SIZE * (shake / SHAKE_MS);

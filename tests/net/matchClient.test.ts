@@ -60,7 +60,7 @@ describe("MatchClient", () => {
     clients[0].reportPose({ x: 6, z: 6, yaw: 1 });
     clients[0].reportPose({ x: 7, z: 7, yaw: 1 });
     await settle(world);
-    expect(clients[1].state.poses["test-a"]).toEqual({ x: 6, z: 6, yaw: 1 });
+    expect(clients[1].state.poses["test-a"]).toEqual({ x: 6, z: 6, yaw: 1, y: 0 });
   });
 
   it("applies private updates to the player they are for", async () => {
@@ -186,5 +186,27 @@ describe("MatchClient", () => {
     await settle(world);
     expect(traitor.state.match!.revealed).toBe(traitor.account);
     expect(traitor.state.you.possession).toBeNull();
+  });
+});
+
+describe("jump height", () => {
+  it("reaches the other players, clamped to a sane range", async () => {
+    const world = new LocalWorld(new Server());
+    const [a, b] = await joinAll(world);
+    a.reportPose({ x: 5, z: 6, yaw: 0, y: 0.5 });
+    await settle(world);
+    expect(b.state.poses[a.account]?.y).toBeCloseTo(0.5);
+    await new Promise((r) => setTimeout(r, 120));
+    a.reportPose({ x: 5, z: 6, yaw: 0, y: 99 });
+    await settle(world);
+    expect(b.state.poses[a.account]?.y).toBe(1);
+  });
+
+  it("reads a pose without a height as standing", async () => {
+    const world = new LocalWorld(new Server());
+    const [a, b] = await joinAll(world);
+    a.reportPose({ x: 5, z: 6, yaw: 0 });
+    await settle(world);
+    expect(b.state.poses[a.account]?.y).toBe(0);
   });
 });

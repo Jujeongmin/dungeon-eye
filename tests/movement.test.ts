@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PITCH_LIMIT, PLAYER_RADIUS, WALK_SPEED, applyLook, stepPlayer } from "../src/game/rules/movement";
+import { GROUNDED, stepJump, type Airborne } from "../src/game/rules/movement";
 
 const open = () => false;
 const wallWest = (x: number) => x < 0;
@@ -64,5 +65,34 @@ describe("applyLook", () => {
   it("clamps pitch so the camera never flips", () => {
     expect(applyLook(0, 0, 0, -100000, 0.002).pitch).toBeCloseTo(PITCH_LIMIT);
     expect(applyLook(0, 0, 0, 100000, 0.002).pitch).toBeCloseTo(-PITCH_LIMIT);
+  });
+});
+
+describe("stepJump", () => {
+  const run = (state: Airborne, jump: boolean, seconds: number, dt = 1 / 60) => {
+    let s = state;
+    let peak = s.y;
+    for (let t = 0; t < seconds; t += dt) {
+      s = stepJump(s, jump && t === 0, dt);
+      peak = Math.max(peak, s.y);
+    }
+    return { s, peak };
+  };
+
+  it("stays on the ground without a jump", () => {
+    expect(stepJump(GROUNDED, false, 1 / 60)).toEqual(GROUNDED);
+  });
+
+  it("rises about 0.6 m and lands within about 0.65 s", () => {
+    const { s, peak } = run(GROUNDED, true, 0.7);
+    expect(peak).toBeGreaterThan(0.55);
+    expect(peak).toBeLessThan(0.7);
+    expect(s).toEqual(GROUNDED);
+  });
+
+  it("cannot jump again in the air", () => {
+    const up = stepJump(GROUNDED, true, 1 / 60);
+    const again = stepJump(up, true, 1 / 60);
+    expect(again.vy).toBeLessThan(up.vy);
   });
 });

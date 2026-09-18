@@ -1,8 +1,12 @@
 import * as THREE from "three";
+import type { Grips } from "./FirstPersonArms";
 
 const REST = new THREE.Vector3(0.22, -0.2, -0.45);
 export const WEAPON_LENGTH = 0.75;
 export const WEAPON_ROTATION = new THREE.Euler(0, Math.PI, 0);
+// Where your hands hold the rifle, as fractions of its length from the stock, and how far below
+// its centre line (metres). Fitted by eye.
+const HOLD = { trigger: 0.2, barrel: 0.7, below: 0.035 } as const;
 
 export class Viewmodel {
   private readonly root = new THREE.Group();
@@ -10,6 +14,8 @@ export class Viewmodel {
   private kick = 0;
   private flashLeft = 0;
   private bobPhase = 0;
+  // The rifle's extent in the root's space; the stock is at max z, the muzzle at min z.
+  private readonly box = new THREE.Box3();
 
   constructor(camera: THREE.Camera, weapon: THREE.Object3D) {
     const size = new THREE.Box3().setFromObject(weapon).getSize(new THREE.Vector3());
@@ -22,6 +28,8 @@ export class Viewmodel {
       if (o.name.startsWith("cal_")) o.visible = false;
     });
     this.root.add(weapon);
+    this.root.updateMatrixWorld(true);
+    this.box.setFromObject(weapon);
     this.flash.position.set(0, 0.05, -WEAPON_LENGTH * 0.8);
     this.root.add(this.flash);
     this.root.position.copy(REST);
@@ -35,6 +43,18 @@ export class Viewmodel {
   fire(): void {
     this.kick = 1;
     this.flashLeft = 0.05;
+  }
+
+  // World positions for the right hand (trigger) and left hand (handguard), after bob and kick.
+  grips(out: Grips): Grips {
+    this.root.updateMatrixWorld(true);
+    const b = this.box;
+    const length = b.max.z - b.min.z;
+    const x = (b.min.x + b.max.x) / 2;
+    const y = (b.min.y + b.max.y) / 2 - HOLD.below;
+    this.root.localToWorld(out.right.set(x, y, b.max.z - length * HOLD.trigger));
+    this.root.localToWorld(out.left.set(x, y, b.max.z - length * HOLD.barrel));
+    return out;
   }
 
   update(dt: number, moving: boolean): void {

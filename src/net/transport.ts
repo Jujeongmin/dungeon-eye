@@ -6,7 +6,7 @@ export interface CallOptions {
 
 export interface RoomUser {
   account: string;
-  pose?: { x: number; z: number; yaw: number; at?: number };
+  pose?: { x: number; z: number; yaw: number; y?: number; at?: number };
 }
 
 export interface MatchTransport {

@@ -1,6 +1,7 @@
 import { PROTOCOL_VERSION } from "../game/match/constants";
 import type { MonsterPoseUpdate } from "../game/match/damage";
 import { matchHost } from "../game/match/lifecycle";
+import { readJumpY } from "../game/rules/movement";
 import { RULE_ERRORS, type Pose, type PublicMatch, type Stage } from "../game/match/types";
 import type { PrivateView } from "../game/match/view";
 import type { MatchTransport, RoomUser } from "./transport";
@@ -145,7 +146,7 @@ export class MatchClient {
 
   reportPose(pose: Pose): void {
     if (this.current.phase !== "playing" && this.current.phase !== "lobby") return;
-    void this.transport.call("reportPose", [{ x: pose.x, z: pose.z, yaw: pose.yaw }], {
+    void this.transport.call("reportPose", [{ x: pose.x, z: pose.z, yaw: pose.yaw, y: readJumpY(pose.y) }], {
       needResponse: false, throttle: POSE_THROTTLE_MS,
     });
   }
@@ -271,7 +272,9 @@ export class MatchClient {
   private onUsers(users: RoomUser[]): void {
     const poses: Record<string, Pose> = {};
     for (const user of users) {
-      if (isPose(user.pose)) poses[user.account] = { x: user.pose.x, z: user.pose.z, yaw: user.pose.yaw };
+      if (isPose(user.pose)) {
+        poses[user.account] = { x: user.pose.x, z: user.pose.z, yaw: user.pose.yaw, y: readJumpY(user.pose.y) };
+      }
     }
     this.set({ poses });
   }
